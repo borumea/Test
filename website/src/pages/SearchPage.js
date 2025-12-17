@@ -14,6 +14,7 @@ import "../styles/TagManager.css";
 import ForeignKeyPopup from "../components/ForeignKeyPopup";
 import { FilterRow } from "../components/FilterRow";
 import { apiRequest } from '../lib/api';
+import { hasAccessToEntity, normalizePermissionsArray } from '../lib/permissions';
 
 const SEARCH_STATE_KEY = "searchPageState";
 const MemoFilterRow = React.memo(FilterRow);
@@ -31,7 +32,8 @@ export default function SearchPage() {
     const [error, setError] = useState("");
     const [columnsMeta, setColumnsMeta] = useState([]);
     const [page, setPage] = useState(1);
-    const [allowedPermissions, setAllowedPermissions] = useState([]);
+    const [allowedPermissions, setAllowedPermissions] = useState({});
+    const [viewBaseTableMap, setViewBaseTableMap] = useState({});
     const [orderBy1, setOrderBy1] = useState("");
     const [orderBy2, setOrderBy2] = useState("");
     const [orderBy3, setOrderBy3] = useState("");
@@ -71,7 +73,7 @@ export default function SearchPage() {
 
     // Load saved cookie
     useEffect(() => {
-        if (tables.length === 0 || allowedPermissions.length === 0) return;
+        if (tables.length === 0 || Object.keys(allowedPermissions).length === 0) return;
 
         const savedState = Cookies.get(SEARCH_STATE_KEY);
         if (!savedState) {
@@ -81,9 +83,8 @@ export default function SearchPage() {
 
         try {
             const parsed = JSON.parse(savedState);
-            const normalized = normalizeTableNameToPermissionKey(parsed.table || "");
 
-            if (parsed.table && allowedPermissions.includes(normalized) && tables.includes(parsed.table)) {
+            if (parsed.table && hasAccessToEntity(parsed.table, allowedPermissions, viewBaseTableMap) && tables.includes(parsed.table)) {
                 setTable(parsed.table);
             }
 
@@ -122,13 +123,42 @@ export default function SearchPage() {
         }
     }, [table, displayCols, filters, orderBy1, orderBy2, orderBy3, rowsPerPage]);
 
+    // Load permissions from localStorage
     useEffect(() => {
         try {
-            const saved = JSON.parse(localStorage.getItem("allowedPermissions") || "[]");
-            setAllowedPermissions(Array.isArray(saved) ? saved.map(s => String(s).toLowerCase()) : []);
-        } catch (e) {
-            setAllowedPermissions([]);
+            // Try loading object format first (new system)
+            const permissionsObj = JSON.parse(localStorage.getItem("permissions") || "{}");
+            if (permissionsObj && typeof permissionsObj === 'object' && Object.keys(permissionsObj).length > 0) {
+                setAllowedPermissions(permissionsObj);
+                return;
+            }
+
+            // Fallback: load array format and convert (backwards compatibility)
+            const savedArray = JSON.parse(localStorage.getItem("allowedPermissions") || "[]");
+            if (Array.isArray(savedArray) && savedArray.length > 0) {
+                const normalized = normalizePermissionsArray(savedArray);
+                setAllowedPermissions(normalized);
+            } else {
+                setAllowedPermissions({});
+            }
+        } catch (err) {
+            console.error("Failed to load permissions:", err);
+            setAllowedPermissions({});
         }
+    }, []);
+
+    // Load view-to-base-table mapping
+    useEffect(() => {
+        async function loadViewMapping() {
+            try {
+                const res = await apiRequest('views/base-table-map', { method: 'GET' });
+                const mapping = await res.json();
+                setViewBaseTableMap(mapping || {});
+            } catch (err) {
+                console.warn('Failed to load view mapping:', err);
+            }
+        }
+        loadViewMapping();
     }, []);
 
     useEffect(() => {
@@ -138,7 +168,7 @@ export default function SearchPage() {
     }, []);
 
     useEffect(() => {
-        if (table && !allowedPermissions.includes(normalizeTableNameToPermissionKey(table))) {
+        if (table && !hasAccessToEntity(table, allowedPermissions, viewBaseTableMap)) {
             setTable("");
         }
     }, [allowedPermissions, table]);
@@ -151,10 +181,8 @@ export default function SearchPage() {
                 const json = await res.json();
                 if (!res.ok) throw new Error(json.error || "Failed to load tables");
 
-                const allowed = JSON.parse(localStorage.getItem("allowedPermissions") || "[]");
-                const allowedSet = new Set(Array.isArray(allowed) ? allowed.map(a => String(a).toLowerCase()) : []);
                 const filteredTables = Array.isArray(json)
-                    ? json.filter(t => allowedSet.has(normalizeTableNameToPermissionKey(t)))
+                    ? json.filter(t => hasAccessToEntity(t, allowedPermissions, viewBaseTableMap))
                     : [];
                 setTables(filteredTables);
             } catch (e) {
@@ -500,8 +528,10 @@ export default function SearchPage() {
         // Foreign key button
         if (colMeta?.isForeignKey && colMeta?.referencedTable && colMeta?.referencedColumn) {
             const referencedPkColumn = colMeta.referencedColumn;
-            const hasPermission = allowedPermissions.includes(
-                normalizeTableNameToPermissionKey(colMeta.referencedTable)
+            const hasPermission = hasAccessToEntity(
+                colMeta.referencedTable,
+                allowedPermissions,
+                viewBaseTableMap
             );
 
             return (
@@ -821,7 +851,7 @@ export default function SearchPage() {
                                 value={table}
                                 onChange={(val) => {
                                     const normalized = String(val).toLowerCase().replace(/[-\s]/g, "_");
-                                    if (!allowedPermissions.includes(normalized)) {
+                                    if (!hasAccessToEntity(t, allowedPermissions, viewBaseTableMap)) {
                                         setError("You do not have permission to access that table.");
                                         return;
                                     }
@@ -894,7 +924,7 @@ export default function SearchPage() {
                                 Advanced Search
                             </button>
 
-                            {allowedPermissions.includes('edit_mode') && (
+                            {allowedPermissions['edit_mode'] === 1 && (
                                 <button
                                     className="btn"
                                     onClick={() => setEditMode((s) => !s)}
