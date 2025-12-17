@@ -65,9 +65,9 @@ export function ReportRunner({ report, onBack }) {
                 //     body: JSON.stringify({ table: q.table, filters: filters, orderBy: q.orderBy, columns: q.columns }),
                 // });
 
-                const response = await apiRequest('/api/query', {
+                const response = await apiRequest('query', {
                     method: 'POST',
-                    body: { table: q.table, columns: ['*'], filters: [], orderBy: [] }
+                    body: { table: q.table, filters: filters, orderBy: q.orderBy, columns: q.columns }
                 });
 
                 let data = await response.json();
@@ -83,7 +83,7 @@ export function ReportRunner({ report, onBack }) {
                         //     body: JSON.stringify({ table: join.fromTable, filters: [], orderBy: [] }),
                         // });
 
-                        const joinRes = await apiRequest('/api/query', {
+                        const joinRes = await apiRequest('query', {
                             method: 'POST',
                             body: { table: join.fromTable, columns: ['*'], filters: [], orderBy: [] }
                         });

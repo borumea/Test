@@ -6,6 +6,7 @@ import { saveDashboardView, loadDashboardView } from "../lib/storage.js";
 import GridLayout from "react-grid-layout";
 import { ReportSelector } from "../components/reports/ReportSelector.js";
 import { apiRequest } from '../lib/api';
+import { hasAccessToEntity, normalizePermissionsArray } from '../lib/permissions';
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import "../styles/HomePage.css";
@@ -54,7 +55,8 @@ function gridUnitsToPixels({ w, h, gridWidthPx, cols, margin, rowHeight }) {
 export default function HomePage() {
     const [availableTables, setAvailableTables] = useState([]);
     const [selectedTables, setSelectedTables] = useState([]);
-    const [allowedPermissions, setAllowedPermissions] = useState([]);
+    const [allowedPermissions, setAllowedPermissions] = useState({});
+    const [viewBaseTableMap, setViewBaseTableMap] = useState({});
     const [error, setError] = useState("");
     const [panelOpen, setPanelOpen] = useState(true);
     const [showSelector, setShowSelector] = useState(false);
@@ -103,27 +105,56 @@ export default function HomePage() {
      */
     useEffect(() => {
         try {
-            const raw = JSON.parse(localStorage.getItem("allowedPermissions") || "[]");
-            const arr = Array.isArray(raw) ? raw.map((s) => String(s).toLowerCase()) : [];
-            setAllowedPermissions(arr);
-        } catch (e) {
-            setAllowedPermissions([]);
+            // Try loading object format first (new system)
+            const permissionsObj = JSON.parse(localStorage.getItem("permissions") || "{}");
+            if (permissionsObj && typeof permissionsObj === 'object' && Object.keys(permissionsObj).length > 0) {
+                setAllowedPermissions(permissionsObj);
+                return;
+            }
+
+            // Fallback: load array format and convert (backwards compatibility)
+            const savedArray = JSON.parse(localStorage.getItem("allowedPermissions") || "[]");
+            if (Array.isArray(savedArray) && savedArray.length > 0) {
+                const normalized = normalizePermissionsArray(savedArray);
+                setAllowedPermissions(normalized);
+            } else {
+                setAllowedPermissions({});
+            }
+        } catch (err) {
+            console.error("Failed to load permissions:", err);
+            setAllowedPermissions({});
         }
     }, []);
 
     /**
-     * Fetch DB tables (filter by allowedPermissions)
+     * Load view-to-base-table mapping
+     */
+    useEffect(() => {
+        async function loadViewMapping() {
+            try {
+                const res = await apiRequest('views/base-table-map', { method: 'GET' });
+                const mapping = await res.json();
+                setViewBaseTableMap(mapping || {});
+            } catch (err) {
+                console.warn('Failed to load view mapping:', err);
+            }
+        }
+        loadViewMapping();
+    }, []);
+
+    /**
+     * Fetch DB tables (filter by allowedPermissions using new permission system)
      */
     useEffect(() => {
         async function loadTables() {
             try {
-                const res = await fetch("/api/tables");
+                const res = await apiRequest("tables");
                 if (!res.ok) throw new Error("tables fetch failed");
                 const tables = await res.json();
-                const allowedSet = new Set(allowedPermissions || []);
-                // keep only tables the user has permission for
+
+                // Filter tables using new permission system
                 const filtered = Array.isArray(tables)
-                    ? tables.filter((t) => allowedSet.has(normalizeTableNameToPermissionKey(t)))
+                    ? tables.filter((t) => hasAccessToEntity(t, allowedPermissions, viewBaseTableMap))
                     : [];
                 setAvailableTables(filtered);
             } catch (e) {
@@ -131,8 +162,12 @@ export default function HomePage() {
                 setError("Failed to load database tables. Is the API server running?");
             }
         }
-        loadTables();
-    }, [allowedPermissions]);
+
+        // Only load tables after permissions and view mapping are loaded
+        if (Object.keys(allowedPermissions).length > 0) {
+            loadTables();
+        }
+    }, [allowedPermissions, viewBaseTableMap]);
 
     /**
      * Load saved view from cookie and validate permissions
@@ -150,7 +185,7 @@ export default function HomePage() {
             const dash = dashboardsConfig.find((d) => d.id === wi.dashId);
             if (!dash) continue;
             const requiredOk = (dash.tables || []).every((tbl) =>
-                allowedPermissions.includes(normalizeTableNameToPermissionKey(tbl))
+                hasAccessToEntity(tbl, allowedPermissions, viewBaseTableMap)
             );
             if (!requiredOk) continue;
 
@@ -253,7 +288,7 @@ export default function HomePage() {
     function hasPermissionForDashboard(dash) {
         if (!dash || !Array.isArray(dash.tables) || dash.tables.length === 0) return true;
         return dash.tables.every((tbl) =>
-            allowedPermissions.includes(normalizeTableNameToPermissionKey(tbl))
+            hasAccessToEntity(tbl, allowedPermissions, viewBaseTableMap)
         );
     }
 
@@ -437,7 +472,7 @@ export default function HomePage() {
                         <div className="dash-catalog">
                             {applicableDashboards.map((d) => {
                                 const permittedToAdd = d.tables.every(tbl =>
-                                    allowedPermissions.includes(normalizeTableNameToPermissionKey(tbl))
+                                    hasAccessToEntity(tbl, allowedPermissions, viewBaseTableMap)
                                 );
                                 return (
                                     <div key={d.id} className="dash-card">
