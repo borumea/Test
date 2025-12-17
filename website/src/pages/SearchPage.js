@@ -190,12 +190,13 @@ export default function SearchPage() {
     }, [results, table]);
 
     useEffect(() => {
-        if (table && !hasAccessToEntity(table, allowedPermissions, viewBaseTableMap)) {
+        // Only validate table access after permissions are loaded (not empty)
+        if (Object.keys(allowedPermissions).length > 0 && table && !hasAccessToEntity(table, allowedPermissions, viewBaseTableMap)) {
             setTable("");
         }
-    }, [allowedPermissions, table]);
+    }, [allowedPermissions, table, viewBaseTableMap]);
 
-    // Load tables
+    // Load tables (only after permissions and view mapping are loaded)
     useEffect(() => {
         async function loadTables() {
             try {
@@ -211,8 +212,12 @@ export default function SearchPage() {
                 setError(e.message || "Failed to load tables");
             }
         }
-        loadTables();
-    }, []);
+
+        // Only load tables after permissions are loaded
+        if (Object.keys(allowedPermissions).length > 0) {
+            loadTables();
+        }
+    }, [allowedPermissions, viewBaseTableMap]);
 
     // Load columns and metadata when table changes
     useEffect(() => {

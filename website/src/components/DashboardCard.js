@@ -123,10 +123,9 @@ function DashboardCard({ instance = {}, dashboard = {}, onRemove, onChangeParams
         try {
             const payload = buildQueryPayload();
             Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
-            const res = await fetch("/api/query", {
+            const res = await apiRequest("query", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
+                body: payload,
                 signal
             });
             const json = await res.json();

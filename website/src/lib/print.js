@@ -347,12 +347,13 @@ function escapeHtml(text) {
  * Prints a multi-section report with export option
  */
 export function printReport({ report, params, results }) {
-    const printFrame = document.createElement("iframe");
-    printFrame.style.position = "fixed";
-    printFrame.style.width = "0";
-    printFrame.style.height = "0";
-    printFrame.style.border = "0";
-    document.body.appendChild(printFrame);
+    // Open a new window for the report (visible to user)
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+
+    if (!printWindow) {
+        alert('Please allow popups to view the report');
+        return;
+    }
 
     const paramSummary = Object.entries(params)
         .map(([k, v]) => `<tr><td><strong>${k}</strong></td><td>${v}</td></tr>`)
@@ -574,19 +575,11 @@ export function printReport({ report, params, results }) {
     </html>
   `;
 
-    const doc = printFrame.contentWindow.document;
+    const doc = printWindow.document;
     doc.open();
     doc.write(html);
     doc.close();
 
-    printFrame.onload = () => {
-        printFrame.contentWindow.focus();
-    };
-
-    // Clean up after 30 seconds
-    setTimeout(() => {
-        if (document.body.contains(printFrame)) {
-            document.body.removeChild(printFrame);
-        }
-    }, 30000);
+    // Focus the new window
+    printWindow.focus();
 }
