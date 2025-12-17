@@ -1,7 +1,7 @@
 // server/Services/metadata.js
 // Unified metadata service for tables and views with multi-table support
 
-const { pool, DB_NAME } = require('./db.service');
+const { pool, DB_NAME } = require('./db');
 
 /**
  * Get metadata for a table or view

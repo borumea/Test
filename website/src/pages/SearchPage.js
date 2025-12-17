@@ -851,7 +851,7 @@ export default function SearchPage() {
                                 value={table}
                                 onChange={(val) => {
                                     const normalized = String(val).toLowerCase().replace(/[-\s]/g, "_");
-                                    if (!hasAccessToEntity(t, allowedPermissions, viewBaseTableMap)) {
+                                    if (!hasAccessToEntity(table, allowedPermissions, viewBaseTableMap)) {
                                         setError("You do not have permission to access that table.");
                                         return;
                                     }

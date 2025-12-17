@@ -1,7 +1,7 @@
 // server/Services/crud.js
 // Generalized CRUD operations with multi-table view support
 
-const { pool } = require('./db.service');
+const { pool } = require('./db');
 const { getEntityMetadata } = require('./metadata');
 const { sanitizeValueForColumn } = require('../Utils/helpers');
 

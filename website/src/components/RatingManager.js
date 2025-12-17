@@ -259,7 +259,7 @@ function RatingConfigModal({ table, column, existingConfig, onClose, onSave }) {
                             shape,
                             max_value: maxValue
                         }
-                    })
+                    }
                 });
 
                 if (!res.ok) {
@@ -281,7 +281,7 @@ function RatingConfigModal({ table, column, existingConfig, onClose, onSave }) {
                             created_by: currentUser,
                             created_at: createdAt
                         }
-                    })
+                    }
                 });
 
                 if (!res.ok) {
