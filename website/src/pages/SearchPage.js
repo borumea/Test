@@ -878,7 +878,7 @@ export default function SearchPage() {
                                 value={table}
                                 onChange={(val) => {
                                     const normalized = String(val).toLowerCase().replace(/[-\s]/g, "_");
-                                    if (!hasAccessToEntity(table, allowedPermissions, viewBaseTableMap)) {
+                                    if (!hasAccessToEntity(val, allowedPermissions, viewBaseTableMap)) {
                                         setError("You do not have permission to access that table.");
                                         return;
                                     }
@@ -922,12 +922,6 @@ export default function SearchPage() {
                     <button className="btn" style={{ marginTop: "8px" }} onClick={handlePrint}>
                         Print Results
                     </button>
-
-                    {isMultiTableView && (
-                        <div className="info-note" style={{ marginTop: "8px", fontSize: "0.9em", color: "#666" }}>
-                            ℹ️ Multi-table view detected. Updates will route to base tables automatically.
-                        </div>
-                    )}
                 </div>}
 
                 <div className="results-panel">
@@ -958,19 +952,6 @@ export default function SearchPage() {
                                     title={editMode ? "Enter View Mode" : "Enter Edit Mode (inline editing)"}
                                 >
                                     {editMode ? "Edit Mode" : "View Mode"}
-                                </button>
-                            )}
-
-                            {results.length > 0 && (
-                                <button
-                                    className="btn"
-                                    onClick={() => {
-                                        exportToCSV(results, `${table}_export`);
-                                        showToast(`Exported ${results.length} rows to CSV`, 'success');
-                                    }}
-                                    title="Export current page to CSV"
-                                >
-                                    📥 Export CSV
                                 </button>
                             )}
 
