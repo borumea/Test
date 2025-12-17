@@ -1,0 +1,123 @@
+.builder-card {
+    background: #fff;
+    padding: 18px;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(2, 6, 23, 0.06);
+}
+
+.builder-header {
+    margin-bottom: 12px;
+}
+
+.builder-title {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.builder-sub {
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.builder-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.builder-col {
+    flex: 1;
+    min-width: 160px;
+}
+
+.label {
+    display: block;
+    font-size: 13px;
+    color: #0f172a;
+    margin-bottom: 6px;
+}
+
+.input,
+select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #e6eef5;
+    background: #fff;
+}
+
+.columns-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.col-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #eef2f7;
+}
+
+.col-name {
+    font-size: 13px;
+    color: #0f172a;
+}
+
+.col-type {
+    font-size: 12px;
+    color: #64748b;
+    margin-left: 8px;
+}
+
+.filter-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.input.small {
+    width: 140px;
+}
+
+.btn {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn.primary {
+    background: #3d86ac;
+    color: #fff;
+}
+
+.btn.ghost {
+    background: transparent;
+    color: #3d86ac;
+    border: 1px solid #e6eef5;
+}
+
+.btn.small {
+    padding: 6px 8px;
+    font-size: 13px;
+}
+
+.builder-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+}
+
+.builder-error {
+    margin-top: 8px;
+    color: #b91c1c;
+    font-size: 13px;
+}

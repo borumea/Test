@@ -1,0 +1,78 @@
+/* src/App.css (top section) */
+:root {
+  --bg: #0f1724;          /* deep navy */
+  --card-bg: #0b1220;     /* slightly lighter */
+  --muted: #94a3b8;
+  --text: #e6eef8;
+  --accent: #3d529c;      /* blue primary */
+  --accent-2: #059669;    /* green */
+  --danger: #ef4444;
+  --glass: rgba(255,255,255,0.03);
+  --radius: 12px;
+}
+
+/* global reset and base */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background-color: var(--bg);
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text);
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+/* keep your existing .App rules etc. below — these are top-level theme variables */
+
+
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}

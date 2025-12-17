@@ -1,0 +1,158 @@
+/* Rating Manager Styles */
+
+.rating-manager-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rating-manager-loading {
+    padding: 8px;
+    color: #6B7280;
+}
+
+.rating-display {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.rating-shape {
+    font-size: 24px;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.rating-shape.interactive {
+    cursor: pointer;
+}
+
+.rating-shape.interactive:hover {
+    transform: scale(1.2);
+    filter: brightness(1.2);
+}
+
+.rating-shape.readonly {
+    cursor: default;
+}
+
+.rating-shape.filled {
+    /* Color set inline */
+}
+
+.rating-shape.empty {
+    color: #D1D5DB;
+}
+
+.rating-value-display {
+    margin-left: 8px;
+    font-size: 14px;
+    color: #6B7280;
+    font-weight: 500;
+}
+
+.rating-error {
+    color: #EF4444;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+/* Rating Config Modal */
+
+.rating-modal {
+    min-width: 500px;
+    max-width: 600px;
+}
+
+.rating-config-section {
+    margin-bottom: 20px;
+}
+
+.shape-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.shape-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    border: 2px solid #E5E7EB;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.shape-option:hover {
+    border-color: #3B82F6;
+    background: #F3F4F6;
+}
+
+.shape-option.selected {
+    border-color: #3B82F6;
+    background: #EFF6FF;
+}
+
+.shape-preview {
+    font-size: 32px;
+}
+
+.shape-label {
+    font-size: 14px;
+    color: #374151;
+    font-weight: 500;
+}
+
+.rating-preview-section {
+    padding: 16px;
+    background: #F9FAFB;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.rating-preview {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.rating-shape.preview {
+    font-size: 28px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .shape-option {
+        background: #1F2937;
+        border-color: #374151;
+    }
+    
+    .shape-option:hover {
+        background: #374151;
+    }
+    
+    .shape-option.selected {
+        background: #1E3A8A;
+    }
+    
+    .rating-preview-section {
+        background: #1F2937;
+    }
+}

@@ -1,0 +1,119 @@
+/* src/components/Navbar.css */
+
+.navbar {
+    background: linear-gradient(90deg, #1f1f1f, #2c2c2c);
+    color: #fff;
+    padding: 0.75rem 2rem;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+.navbar-brand a {
+    color: #fff;
+    /* soft teal accent */
+    text-decoration: none;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    transition: color 0.3s ease;
+}
+
+.navbar-brand a:hover {
+    color: #4d66ac;
+    /* lighter teal on hover */
+}
+
+.navbar-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.navbar-links li {
+    position: relative;
+}
+
+.navbar-links a {
+    color: #e0e0e0;
+    text-decoration: none;
+    font-size: 1rem;
+    padding: 0.5rem;
+    transition: color 0.3s ease;
+}
+
+.navbar-links a::after {
+    content: '';
+    position: absolute;
+    width: 0%;
+    height: 2px;
+    bottom: -4px;
+    left: 0;
+    background-color: #4d66ac;
+    /* soft teal underline */
+    transition: width 0.3s ease;
+}
+
+.navbar-links a:hover {
+    color: #4d66ac;
+}
+
+.navbar-links a:hover::after {
+    width: 100%;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .navbar {
+        flex-wrap: wrap;
+        padding: 0.75rem 1rem;
+    }
+
+    .navbar-links {
+        width: 100%;
+        justify-content: center;
+        margin-top: 0.75rem;
+    }
+}
+
+/* Match Logout button to link styling */
+.logout-btn {
+    background: none;
+    border: none;
+    color: #e0e0e0;
+    font-size: 1rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.3s ease;
+    font-family: inherit;
+}
+
+/* Hover color and underline animation, same as links */
+.logout-btn::after {
+    content: '';
+    position: absolute;
+    width: 0%;
+    height: 2px;
+    bottom: -4px;
+    left: 0;
+    background-color: #4d66ac;
+    transition: width 0.3s ease;
+}
+
+.logout-btn:hover {
+    color: #4d66ac;
+}
+
+.logout-btn:hover::after {
+    width: 100%;
+}

@@ -1,0 +1,344 @@
+/* Tag Manager Wrapper - for horizontal layout */
+.tag-manager-wrapper {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    width: 100%;
+}
+
+/* Tag Manager Container */
+.tag-manager-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+/* Tag Input Wrapper */
+.tag-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+/* Selected Tags Display */
+.selected-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+    min-height: 42px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    align-items: center;
+    box-sizing: border-box;
+}
+
+/* Individual Tag Chip */
+.tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Tag Remove Button */
+.tag-remove-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 4px;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.tag-remove-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Tag Input Field */
+.tag-input-field {
+    flex: 1;
+    min-width: 120px;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 4px;
+    font-size: 14px;
+    color: var(--text, #e6eef8);
+}
+
+.tag-input-field::placeholder {
+    color: var(--muted, #94a3b8);
+    opacity: 0.6;
+}
+
+/* Tag Dropdown */
+.tag-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 240px;
+    overflow-y: auto;
+    background: var(--card-bg, #0b1220);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(2, 6, 23, 0.8);
+    z-index: 1000;
+}
+
+/* Dropdown Item */
+.tag-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    color: var(--text, #e6eef8);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.tag-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.tag-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Color Indicator in Dropdown */
+.tag-color-indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.tag-dropdown-value {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Manage Tags Button - positioned to the right */
+.manage-tags-btn {
+    flex-shrink: 0;
+    height: 42px;
+    padding: 0 16px;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+/* Tag Error Message */
+.tag-error {
+    color: var(--danger, #ef4444);
+    font-size: 13px;
+    margin-top: 4px;
+    padding: 4px 8px;
+    background: rgba(239, 68, 68, 0.08);
+    border-radius: 6px;
+}
+
+/* Modal Styles */
+.tag-modal {
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.tag-modal .modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Add Tag Section */
+.add-tag-section {
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.add-tag-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text, #e6eef8);
+}
+
+.add-tag-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.add-tag-form .field-input {
+    flex: 1;
+}
+
+.add-tag-form .color-picker {
+    width: 50px;
+    height: 38px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Existing/Deleted Tags Sections */
+.existing-tags-section,
+.deleted-tags-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.existing-tags-section h4,
+.deleted-tags-section h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text, #e6eef8);
+}
+
+.deleted-tags-section h4 {
+    color: var(--danger, #ef4444);
+}
+
+.existing-tags-section .muted,
+.deleted-tags-section .muted {
+    color: var(--muted, #94a3b8);
+    font-size: 13px;
+}
+
+/* Tags List */
+.tags-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tag-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    transition: background 0.15s;
+}
+
+.tag-list-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.tag-list-item.deleted {
+    opacity: 0.5;
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.tag-list-item .tag-chip {
+    flex: 1;
+}
+
+/* Tag Badge */
+.tag-badge {
+    margin-left: 8px;
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Button Variants */
+.btn-small {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    height: 38px;
+    box-sizing: border-box;
+}
+
+.btn-danger {
+    color: var(--danger, #ef4444);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Field with tags option wrapper */
+.field-with-tags-option {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.field-with-tags-option .field-input,
+.field-with-tags-option .textarea {
+    flex: 1;
+}
+
+.field-with-tags-option .create-tags-btn {
+    flex-shrink: 0;
+    height: 42px;
+    padding: 0 16px;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.field-with-tags-option .textarea.field-input {
+    min-height: 110px;
+}
+
+.btn-centered {
+    align-self: center;
+    height: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 720px) {
+    .tag-manager-wrapper {
+        flex-direction: column;
+    }
+
+    .manage-tags-btn {
+        width: 100%;
+        align-self: center;
+        height: auto;
+    }
+
+    .field-with-tags-option {
+        flex-direction: column;
+    }
+
+    .field-with-tags-option .create-tags-btn {
+        width: 100%;
+        height: auto;
+    }
+}
+
+.custom-file-upload {
+    border: 20px solid #aD1B2C;
+    display: inline-block;
+    padding: 6px 12px;
+    cursor: pointer;
+}

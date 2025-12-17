@@ -1,0 +1,32 @@
+.error-popup {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 4000;
+}
+
+.error-popup-content {
+    background: #111827;
+    color: #fff;
+    padding: 12px 14px;
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(2, 6, 23, 0.25);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 220px;
+}
+
+.error-popup-message {
+    flex: 1;
+    font-size: 13px;
+}
+
+.error-popup-close {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+}

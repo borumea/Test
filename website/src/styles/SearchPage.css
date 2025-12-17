@@ -1,0 +1,625 @@
+/* src/styles/SearchPage.css */
+/* Modern dark-glass theme aligned with HomePage.css + custom dropdown styling */
+
+:root {
+    --bg: #0f1724;
+    --card-bg: #0b1220;
+    --muted: #94a3b8;
+    --text: #e6eef8;
+    --accent: #3d86ac;
+    --glass: rgba(255, 255, 255, 0.03);
+    --radius: 12px;
+    --gap: 12px;
+}
+
+/* Root layout */
+.search-page {
+    position: absolute;
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: 22vw 1fr;
+    gap: 20px;
+    padding: 20px;
+    color: var(--text);
+    background: var(--bg);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.search-page-just-results {
+    position: absolute;
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 20px;
+    color: var(--text);
+    background: var(--bg);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Left panel */
+.search-panel {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: 0 4px 18px rgba(2, 6, 23, 0.6);
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.search-panel h2 {
+    margin: 0 0 12px 0;
+    font-size: 1.25rem;
+    color: var(--text);
+}
+
+/* Control sections */
+.control-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 1fr;
+}
+
+.control-label {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+/* Inputs */
+.control-input,
+input[type="text"],
+.filter-value-input {
+    background: var(--glass);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: var(--text);
+    box-sizing: border-box;
+    transition: border 0.2s ease, background 0.2s ease;
+}
+
+.control-input:focus,
+input[type="text"]:focus,
+.filter-value-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.small-textbox {
+    max-width: 45px;
+}
+
+/* Column list container */
+.cols-list {
+    background: var(--glass);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius);
+    padding: 8px;
+    max-height: 250px;
+    /* fixed height for scroll area */
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: grid;
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    /* stack items vertically */
+    gap: 8px;
+    /* vertical spacing between items */
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+    margin: 6px 0px 8px 0px;
+}
+
+/* Filters area */
+.filters-area {
+    margin-top: 6px;
+    background: var(--glass);
+    padding: 10px;
+    border-radius: var(--radius);
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.filter-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 6px 0px 8px 0px;
+    flex-wrap: wrap;
+    overflow: visible;
+}
+
+.filter-row>* {
+    min-width: 120px;
+    flex: 1 1 auto;
+}
+
+/* Selects */
+.filter-row select {
+    background: var(--glass);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 6px 8px;
+    border-radius: 6px;
+    color: var(--text);
+    transition: border 0.2s ease, background 0.2s ease;
+}
+
+.filter-row select:focus {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.filter-row select option {
+    background-color: var(--card-bg);
+    color: var(--text);
+}
+
+/* Filter delete */
+.filter-delete-btn,
+.filter-remove-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    color: var(--muted);
+    font-weight: bold;
+    border-radius: 6px;
+    height: "100%";
+    aspect-ratio: 20 / 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.filter-delete-btn:hover,
+.filter-remove-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text);
+}
+
+/* Checkbox styling */
+.col-checkbox input[type="checkbox"],
+.filter-row input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.col-checkbox input[type="checkbox"]:checked,
+.filter-row input[type="checkbox"]:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
+}
+
+/* Buttons */
+.btn {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn:hover {
+    background: rgba(77, 98, 172, 0.16);
+}
+
+.btn.primary,
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.08);
+}
+
+.btn.primary:hover {
+    background: #3d86ac;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.16);
+}
+
+.sortable:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Error note */
+.error-note {
+    color: #f87171;
+    font-size: 0.85rem;
+    margin-top: 8px;
+}
+
+.context-menu {
+    position: absolute;
+    top: var(--context-menu-y);
+    left: var(--context-menu-x);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+/* Right panel */
+.results-panel {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 12px;
+    box-shadow: 0 4px 18px rgba(2, 6, 23, 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+    overflow: hidden;
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text);
+}
+
+/* Table */
+.results-table-wrap {
+    flex: 1 1 auto;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--glass);
+    border-radius: 8px;
+    padding: 6px;
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+    color: var(--text);
+}
+
+.results-table th,
+.results-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.results-table thead th {
+    position: sticky;
+    top: 0;
+    background: rgba(11, 18, 24, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    z-index: 4;
+}
+
+.sticky-col {
+    position: sticky;
+    left: 0;
+    background: rgba(11, 18, 24, 0.97);
+    z-index: 3;
+}
+
+.no-results {
+    text-align: center;
+    color: var(--muted);
+    padding: 12px 0;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .search-page {
+        grid-template-columns: 1fr;
+        padding: 12px;
+        top: 56px;
+    }
+
+    .results-panel {
+        order: 2;
+    }
+}
+
+/* .results-table tr.selected-row {
+    background: rgba(0, 120, 215, 0.12);
+}
+
+.results-table tr.selected-row td {
+    font-weight: 600;
+} */
+
+.results-table tr.selected-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+}
+
+.results-table tr.selected-row td {
+    background: rgba(37, 99, 235, 0.25);
+    /* box-shadow: inset 0 0 0 1px var(--accent); */
+    font-weight: 600;
+}
+
+/* Advanced Settings Popup */
+.advanced-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--card-bg);
+    color: var(--text);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+    padding: 20px;
+    width: 60%;
+    max-width: 700px;
+    max-height: 80vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    z-index: 999;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 16px;
+    /* keeps edges clear on small screens */
+}
+
+.advanced-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.advanced-popup-close {
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    border-radius: 6px;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: background 0.2s ease;
+}
+
+.advanced-popup-close:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text);
+}
+
+.advanced-filters-scroll {
+    background: var(--glass);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius);
+    padding: 8px;
+    flex: 1 1 auto;
+    overflow-y: visible;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 250px;
+}
+
+/* Rating display in search results */
+.rating-cell-display {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.rating-shape-readonly {
+    font-size: 16px;
+    user-select: none;
+}
+
+.rating-value-small {
+    margin-left: 6px;
+    font-size: 12px;
+    color: #6B7280;
+}
+
+/* ============================================
+   Class and Meeting Availability - Grouped Display
+   ============================================ */
+
+/* Reservation header row */
+.reservation-header-row {
+    background: rgba(255, 255, 255, 0.03);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.reservation-header-row:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.reservation-header-cell {
+    padding: 14px 12px !important;
+    font-weight: 600;
+    user-select: none;
+}
+
+.reservation-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.reservation-expand-icon {
+    color: var(--accent);
+    font-size: 0.85em;
+    transition: transform 0.2s ease;
+    display: inline-block;
+    min-width: 12px;
+}
+
+.reservation-datetime {
+    color: var(--text);
+    font-size: 0.95em;
+}
+
+.reservation-count {
+    color: var(--muted);
+    font-size: 0.85em;
+    font-weight: 400;
+    margin-left: auto;
+}
+
+/* Participant rows */
+.participant-row {
+    background: var(--card-bg);
+    transition: background 0.15s ease;
+}
+
+.participant-row:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.participant-row.selected-row {
+    background: rgba(61, 134, 172, 0.15);
+}
+
+.participant-row.selected-row:hover {
+    background: rgba(61, 134, 172, 0.2);
+}
+
+.participant-cell {
+    padding-left: 32px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+/* First column gets extra indent */
+.participant-row .sticky-col.participant-cell {
+    padding-left: 40px !important;
+    background: rgba(11, 18, 24, 0.97);
+}
+
+.participant-row.selected-row .sticky-col.participant-cell {
+    background: rgba(61, 134, 172, 0.15);
+}
+
+/* Primary key styling for grouped view */
+.pk-value {
+    color: var(--muted);
+    font-size: 0.85em;
+    font-family: 'Courier New', monospace;
+}
+
+/* Edit mode inputs in participant rows */
+.participant-cell input[type="text"],
+.participant-cell input[type="number"],
+.participant-cell input[type="email"],
+.participant-cell input[type="date"],
+.participant-cell input[type="datetime-local"] {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 6px 8px;
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.9em;
+    transition: border 0.2s ease, background 0.2s ease;
+}
+
+.participant-cell input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+/* Ensure sticky columns work with grouped rows */
+.reservation-header-row .sticky-col,
+.participant-row .sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+}
+
+.results-table thead th.sticky-col {
+    z-index: 5;
+}
+
+/* Consistent sizing for edit mode inputs */
+.edit-cell-input {
+    width: 100%;
+    min-width: 120px;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.edit-cell-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.edit-cell-tag-wrapper {
+    min-width: 150px;
+}
+
+/* Ensure participant cells can grow horizontally */
+.participant-cell {
+    min-width: 120px;
+}
+
+.participant-cell input.edit-cell-input {
+    min-width: 150px;
+    max-width: 100%;
+}
+
+/* Add to src/styles/SearchPage.css */
+
+.fk-link-button {
+    background: none;
+    border: none;
+    color: var(--accent-color, #007bff);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: inherit;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
+
+.fk-link-button:hover {
+    background-color: var(--hover-bg, rgba(0, 123, 255, 0.1));
+    text-decoration-style: solid;
+}
+
+.fk-link-button:active {
+    transform: scale(0.98);
+}

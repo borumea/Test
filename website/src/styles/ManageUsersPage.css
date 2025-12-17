@@ -1,0 +1,307 @@
+@import url('./HomePage.css');
+
+.manage-root {
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 28px;
+}
+
+.manage-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.manage-header h1 {
+    font-size: 28px;
+    margin-bottom: 6px;
+}
+
+.manage-header .sub {
+    color: var(--muted);
+    margin-bottom: 18px;
+    font-size: 14px;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.tab {
+    padding: 10px 16px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.15s ease;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.tab.active {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+}
+
+/* Messages */
+.msg {
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+}
+
+.msg.error {
+    background: rgba(220, 38, 38, 0.15);
+    color: #d86161;
+}
+
+.msg.success {
+    background: rgba(22, 163, 74, 0.15);
+    color: #4abe80;
+}
+
+/* Table */
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: 0 4px 18px rgba(2, 6, 23, 0.6);
+}
+
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.user-table th,
+.user-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    text-align: left;
+}
+
+.user-table tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+}
+
+.user-table tr.selected {
+    background: rgba(37, 99, 235, 0.25);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+/* Edit/Create Sections */
+.edit-card,
+.create-section {
+    background: var(--card-bg);
+    padding: 18px;
+    border-radius: var(--radius);
+    margin-top: 20px;
+    box-shadow: 0 4px 18px rgba(2, 6, 23, 0.6);
+}
+
+/* Permission checkboxes */
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.perm-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--glass);
+    border-radius: 10px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    font-size: 14px;
+}
+
+.perm-item input[type="checkbox"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.4s ease;
+}
+
+.perm-item input[type="checkbox"]:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 6px rgba(61, 134, 172, 0.5);
+}
+
+.perm-item input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 13px;
+    color: white;
+}
+
+.checkbox-item input[type="checkbox"] {
+    appearance: none;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.4s ease;
+}
+
+.checkbox-item input[type="checkbox"]:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 6px rgba(61, 134, 172, 0.5);
+}
+
+.checkbox-item input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 13px;
+    color: white;
+}
+
+/* Password verification */
+.password-verify {
+    margin-top: 20px;
+}
+
+/* One-Time Password layout */
+.pw-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pw-inline .pw-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+.pw-inline .pw-wrapper input {
+    width: 100%;
+    padding: 8px 36px 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+}
+
+.pw-inline .pw-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--accent);
+    font-size: 18px;
+    padding: 0;
+    line-height: 1;
+}
+
+/* Generate button */
+.pw-inline .btn {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+    height: 36px; /* Match input height */
+}
+
+.pw-inline .btn:hover {
+    background: rgba(77, 98, 172, 0.16);
+}
+
+/* Form fields */
+.form-field {
+    margin-bottom: 12px;
+}
+
+.form-field input {
+    width: 100%;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+}
+
+/* Actions */
+.actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Buttons */
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+/* Inputs general */
+input[type="password"],
+input[type="text"],
+input[type="email"],
+input[type="number"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="file"] {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px;
+    outline: none;
+}
+
+/* Match focus border color */
+input[type="password"]:focus,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="datetime-local"],
+input[type="file"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(61, 134, 172, 0.3);
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield; /* Firefox */
+}

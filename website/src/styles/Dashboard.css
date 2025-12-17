@@ -1,0 +1,188 @@
+/* src/styles/Dashboard.css */
+
+.dashboard-card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.dashboard-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.card-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: move;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.card-body {
+    padding: 16px;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-footer {
+    padding: 8px 16px;
+    border-top: 1px solid #e5e7eb;
+    font-size: 0.875rem;
+    color: #6b7280;
+    flex-shrink: 0;
+}
+
+/* Metric cards need centering */
+.card-metric-only {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 100px;
+}
+
+.metric-large {
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 700;
+    color: #1f2937;
+}
+
+/* Chart containers should fill available space */
+.recharts-responsive-container {
+    flex: 1 !important;
+    min-height: 200px !important;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 12px;
+}
+
+.card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #e8f6f7;
+}
+
+.card-sub {
+    font-size: 0.85rem;
+    color: #b5d6d8;
+}
+
+.card-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.card-body {
+    margin-top: 12px;
+    min-height: 120px;
+}
+
+/* metric only */
+.card-metric-only {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+}
+
+.metric-large {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #ecfbfd;
+}
+
+/* table view */
+.table-view table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-view th {
+    text-align: left;
+    font-weight: 700;
+    padding: 8px;
+    color: var(--text);
+}
+
+.table-view td {
+    padding: 8px;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.02);
+    color: var(--text);
+}
+
+/* footer description (single place for description) */
+.card-footer {
+    /* margin-top: 12px; */
+    /* padding-top: 10px; */
+    border-top: 1px dashed rgba(255, 255, 255, 0.03);
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* Chart tooltip styling for better contrast and readability */
+.chart-tooltip {
+    background: rgba(6, 18, 22, 0.92);
+    color: #f3f7f8;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+    font-size: 13px;
+    min-width: 140px;
+}
+
+.chart-tooltip .tooltip-title {
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.chart-tooltip .tooltip-row {
+    margin: 4px 0;
+    color: #dbeef0;
+}
+
+.react-grid-item>.dashboard-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.react-grid-item > .react-resizable-handle {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+}
+
+/* Responsive text scaling */
+@media (max-width: 768px) {
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .params-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .param-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

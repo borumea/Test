@@ -1,0 +1,31 @@
+.metric-selector {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.metric-selector select {
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: #171a1b;
+    color: #e8eef0;
+}
+
+.compact-checkbox {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    color: #cbd6d8;
+    font-size: 0.9rem;
+}
+
+.btn {
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: #3d86ac;
+    color: #082524;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
