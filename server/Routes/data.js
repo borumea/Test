@@ -22,7 +22,7 @@ const uploadMemory = multer ? multer({ storage: multer.memoryStorage() }) : null
  */
 router.post('/query', authenticateToken, requireTablePermission('table'), async (req, res) => {
     try {
-        const { table, columns, filters, orderBy, groupBy, aggregate, limit, offset } = req.body || {};
+        const { table, columns, filters, orderBy, groupBy, aggregate, limit, offset, includePrimaryKeys } = req.body || {};
 
         // Get metadata
         const metadata = await getEntityMetadata(table);
@@ -56,8 +56,8 @@ router.post('/query', authenticateToken, requireTablePermission('table'), async 
         }
 
         // Add limits
-        if (limit) builder.limit(limit);
-        if (offset) builder.offset(offset);
+        if (limit !== undefined && limit !== null) builder.limit(limit);
+        if (offset !== undefined && offset !== null) builder.offset(offset);
 
         // Execute query
         const { sql, params } = builder.build();
@@ -68,7 +68,71 @@ router.post('/query', authenticateToken, requireTablePermission('table'), async 
             ? fields.map(f => f.name)
             : rows.length > 0 ? Object.keys(rows[0]) : [];
 
-        return res.json({ rows, columns: resultColumns });
+        // Include primary key information if requested
+        const response = { rows, columns: resultColumns };
+
+        if (includePrimaryKeys && metadata.isMultiTable && metadata.baseTables) {
+            // For multi-table views, fetch and embed primary keys in each row
+            const primaryKeys = {};
+            const pkColumnsByTable = {};
+
+            // Get primary key columns for each base table
+            for (const baseTable of metadata.baseTables) {
+                try {
+                    const baseMeta = await getEntityMetadata(baseTable);
+                    if (baseMeta.primaryKey) {
+                        primaryKeys[baseTable] = baseMeta.primaryKey;
+                        pkColumnsByTable[baseTable] = baseMeta.primaryKey;
+                    }
+                } catch (err) {
+                    console.warn(`Failed to get PK for ${baseTable}:`, err.message);
+                }
+            }
+
+            // Fetch primary key values for each row
+            const enrichedRows = await Promise.all(rows.map(async (row) => {
+                const pkData = {};
+
+                for (const [baseTable, pkColumn] of Object.entries(pkColumnsByTable)) {
+                    try {
+                        // Find a column from this table that we can use to identify the row
+                        const tableColumns = Object.keys(metadata.columnTableMap || {})
+                            .filter(col => metadata.columnTableMap[col] === baseTable && row[col] !== undefined);
+
+                        if (tableColumns.length > 0) {
+                            // Build a query to fetch the PK value
+                            const conditions = tableColumns.map(col => `\`${col}\` = ?`).join(' AND ');
+                            const values = tableColumns.map(col => row[col]);
+
+                            const [pkRows] = await pool.query(
+                                `SELECT \`${pkColumn}\` FROM \`${baseTable}\` WHERE ${conditions} LIMIT 1`,
+                                values
+                            );
+
+                            if (pkRows && pkRows.length > 0) {
+                                // Store with table prefix to avoid conflicts
+                                pkData[`__pk_${baseTable}`] = pkRows[0][pkColumn];
+                            }
+                        }
+                    } catch (err) {
+                        console.warn(`Failed to fetch PK for ${baseTable}:`, err.message);
+                    }
+                }
+
+                // Merge PK data with row data
+                return { ...row, ...pkData };
+            }));
+
+            response.rows = enrichedRows;
+            response.primaryKeys = primaryKeys;
+            response.pkColumnsByTable = pkColumnsByTable; // Map of table -> pk column name
+
+        } else if (includePrimaryKeys) {
+            // For regular tables, return single PK
+            response.primaryKeys = { [table]: metadata.primaryKey };
+        }
+
+        return res.json(response);
 
     } catch (e) {
         console.error('Query error:', e);

@@ -45,18 +45,8 @@ function buildWhereClause(filters, allowedColumns) {
 }
 
 /**
- * REMOVED: Views no longer create Employees permission columns
- *
- * Permission logic is now:
- * - User needs permission to ALL base tables to access a view
- * - No individual view permissions are stored
- * - Tags and Ratings are public (accessible to everyone)
- */
-
-/**
  * Create a new view
  *
- * Views no longer create permission columns in Employees table.
  * Access is determined by permissions to underlying base tables.
  */
 async function createView(viewName, baseTable, columns, filters, allowedColumns) {

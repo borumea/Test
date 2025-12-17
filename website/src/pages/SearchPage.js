@@ -51,7 +51,14 @@ export default function SearchPage() {
     const [selectedRow, setSelectedRow] = useState(null);
     const [selectedRowGlobalIndex, setSelectedRowGlobalIndex] = useState(null);
 
-    // NEW: Track metadata about current table/view
+    // Chunked pagination state
+    const [totalCount, setTotalCount] = useState(0); // Total records matching query
+    const [chunkedResults, setChunkedResults] = useState([]); // Current chunk of results
+    const [chunkSize, setChunkSize] = useState(100); // Records per chunk (10 pages * 10 rows)
+    const [currentChunkIndex, setCurrentChunkIndex] = useState(0); // Which chunk we're on
+    const [loadingChunk, setLoadingChunk] = useState(false);
+
+    // Track metadata about current table/view
     const [entityMetadata, setEntityMetadata] = useState(null);
     const [isMultiTableView, setIsMultiTableView] = useState(false);
 
@@ -455,6 +462,7 @@ export default function SearchPage() {
         setPage(1);
         setSelectedRow(null);
         setSelectedRowGlobalIndex(null);
+        setCurrentChunkIndex(0);
 
         try {
             const effectiveFilters = filters
@@ -486,16 +494,65 @@ export default function SearchPage() {
 
             finalOrderBy = finalOrderBy.slice(0, 3);
 
-            const payload = {
+            // Step 1: Get total count
+            const countPayload = {
+                table,
+                columns: ['COUNT(*) as total'],
+                filters: effectiveFilters,
+            };
+
+            const countRes = await apiRequest('query', {
+                method: 'POST',
+                body: countPayload
+            });
+
+            const countJson = await countRes.json();
+            if (!countRes.ok) throw new Error(countJson.error || "Failed to get count");
+
+            const total = countJson.rows?.length || 0;
+            setTotalCount(total);
+
+            // Step 2: If rowsPerPage is 0 (show all), fetch everything
+            if (rowsPerPage === 0) {
+                const allPayload = {
+                    table,
+                    columns: columns,
+                    filters: effectiveFilters,
+                    orderBy: finalOrderBy
+                };
+
+                const allRes = await apiRequest('query', {
+                    method: 'POST',
+                    body: allPayload
+                });
+
+                const allJson = await allRes.json();
+                if (!allRes.ok) throw new Error(allJson.error || "Search failed");
+
+                let rows = allJson.rows || [];
+                setResults(rows);
+                setChunkedResults(rows);
+                return;
+            }
+
+            // Step 3: Calculate chunk size (10 pages worth of data)
+            const effectiveChunkSize = rowsPerPage * 10;
+            setChunkSize(effectiveChunkSize);
+
+            // Step 4: Fetch first chunk with primary keys included
+            const chunkPayload = {
                 table,
                 columns: columns,
                 filters: effectiveFilters,
-                orderBy: finalOrderBy
+                orderBy: finalOrderBy,
+                limit: effectiveChunkSize,
+                offset: 0,
+                includePrimaryKeys: true // Request primary key metadata
             };
 
             const res = await apiRequest('query', {
                 method: 'POST',
-                body: payload
+                body: chunkPayload
             });
 
             let json;
@@ -506,24 +563,93 @@ export default function SearchPage() {
             }
             if (!res.ok) throw new Error(json.error || json.message || "Search failed");
 
-            let rows = [];
-            if (Array.isArray(json)) {
-                rows = json;
-            } else {
-                rows = json.rows || json.result || json.data || json.results || json.payload || [];
+            console.log(json)
+
+            let rows = json.rows || [];
+
+            // Store primary key metadata if provided
+            if (json.primaryKeys) {
+                setEntityMetadata(prev => ({
+                    ...prev,
+                    primaryKeys: json.primaryKeys, // Map of tableName -> pkColumn
+                    pkColumnsByTable: json.pkColumnsByTable || json.primaryKeys // Explicit column names
+                }));
             }
 
-            if ((!rows || rows.length === 0) && (typeof json.value === "number" || typeof json.total === "number")) {
-                rows = [{ value: json.value ?? json.total }];
-            }
-
-            setResults(rows || []);
+            setResults(rows);
+            setChunkedResults(rows);
 
         } catch (err) {
             setError(err.message || "Search failed");
             setResults([]);
+            setChunkedResults([]);
+            setTotalCount(0);
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function loadNextChunk() {
+        if (loadingChunk || !table) return;
+
+        setLoadingChunk(true);
+        try {
+            const effectiveFilters = filters
+                .filter((f) => f && f.column && (f.operator || f.op) && f.value !== undefined && f.value !== "")
+                .map((f) => ({
+                    column: f.column,
+                    operator: f.operator || f.op || "=",
+                    value: f.value,
+                }));
+
+            const userOrderBy = [orderBy1, orderBy2, orderBy3].filter(Boolean);
+            const defaultOrderByArray = defaultOrderBy[table] || [];
+            const userOrderByCols = userOrderBy.map(ob => {
+                const match = ob.match(/^(.+?)\s+(ASC|DESC)$/i);
+                return match ? match[1].trim() : ob.trim();
+            });
+
+            let finalOrderBy = [...userOrderBy];
+            for (const defaultOb of defaultOrderByArray) {
+                if (finalOrderBy.length >= 3) break;
+                const match = defaultOb.match(/^(.+?)\s+(ASC|DESC)$/i);
+                const defaultCol = match ? match[1].trim() : defaultOb.trim();
+                if (!userOrderByCols.includes(defaultCol)) {
+                    finalOrderBy.push(defaultOb);
+                }
+            }
+            finalOrderBy = finalOrderBy.slice(0, 3);
+
+            const nextChunkIndex = currentChunkIndex + 1;
+            const offset = nextChunkIndex * chunkSize;
+
+            const chunkPayload = {
+                table,
+                columns: columns,
+                filters: effectiveFilters,
+                orderBy: finalOrderBy,
+                limit: chunkSize,
+                offset: offset,
+                includePrimaryKeys: true
+            };
+
+            const res = await apiRequest('query', {
+                method: 'POST',
+                body: chunkPayload
+            });
+
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error || "Failed to load more data");
+
+            const newRows = json.rows || [];
+            setResults(prev => [...prev, ...newRows]);
+            setChunkedResults(prev => [...prev, ...newRows]);
+            setCurrentChunkIndex(nextChunkIndex);
+
+        } catch (err) {
+            setError(err.message || "Failed to load more data");
+        } finally {
+            setLoadingChunk(false);
         }
     }
 
@@ -539,6 +665,10 @@ export default function SearchPage() {
                 next.unshift(fc);
             }
         });
+
+        // Filter out internal primary key columns (prefixed with __pk_)
+        next = next.filter(col => !col.startsWith('__pk_'));
+
         return next;
     }, [columns, displayCols, filters]);
 
@@ -546,7 +676,8 @@ export default function SearchPage() {
         if (!results.length) return [];
         if (rowsPerPage === 0) return results.slice();
         const start = (page - 1) * rowsPerPage;
-        return results.slice(start, start + rowsPerPage);
+        const end = start + rowsPerPage;
+        return results.slice(start, end);
     }, [results, page, rowsPerPage]);
 
     function renderCell(val, colMeta, columnName, rowData) {
@@ -743,11 +874,22 @@ export default function SearchPage() {
 
     const totalPages = Math.max(
         1,
-        Math.ceil(results.length / (rowsPerPage === 0 ? (results.length || 1) : Math.max(1, rowsPerPage)))
+        Math.ceil(totalCount / (rowsPerPage === 0 ? (totalCount || 1) : Math.max(1, rowsPerPage)))
     );
 
     const startIndex = rowsPerPage === 0 ? 0 : (page - 1) * rowsPerPage;
 
+    // Check if we need to load more data
+    useEffect(() => {
+        if (rowsPerPage === 0 || totalPages <= 10) return; // Don't chunk when showing all
+
+        const endIndex = startIndex + rowsPerPage;
+        const needMoreData = endIndex > results.length && results.length < totalCount;
+
+        if (needMoreData && !loadingChunk) {
+            loadNextChunk();
+        }
+    }, [page, rowsPerPage, results.length, totalCount]);
     function onSelectRow(localIndex) {
         const globalIndex = startIndex + localIndex;
         setSelectedRow(results[globalIndex]);
@@ -807,24 +949,49 @@ export default function SearchPage() {
                 return;
             }
 
-            // Determine which table this column belongs to (for views)
+            // Determine which table this column belongs to
             let targetTable = table;
-            let pkColumn = getPrimaryKeyColumn();
+            let pkColumn = null;
+            let pkValue = null;
 
             if (isMultiTableView && entityMetadata?.columnTableMap) {
                 // For multi-table views, route to the correct base table
-                targetTable = entityMetadata.columnTableMap[col] || table;
-            }
+                targetTable = entityMetadata.columnTableMap[col];
 
-            if (!pkColumn) {
-                setError("Primary key column not determined");
-                return;
-            }
+                if (!targetTable) {
+                    setError(`Unable to determine source table for column '${col}'`);
+                    return;
+                }
 
-            const pkValue = row[pkColumn];
-            if (pkValue === undefined || pkValue === null) {
-                setError("Primary key value missing for this row");
-                return;
+                // Get the primary key for that specific table
+                if (entityMetadata.pkColumnsByTable && entityMetadata.pkColumnsByTable[targetTable]) {
+                    pkColumn = entityMetadata.pkColumnsByTable[targetTable];
+
+                    // Look for the PK value with table prefix
+                    const pkKey = `__pk_${targetTable}`;
+                    pkValue = row[pkKey];
+
+                    if (pkValue === undefined || pkValue === null) {
+                        setError(`Primary key value for table '${targetTable}' is missing from row data`);
+                        return;
+                    }
+                } else {
+                    setError(`Unable to determine primary key for table '${targetTable}'`);
+                    return;
+                }
+            } else {
+                // Regular table or single-base-table view
+                pkColumn = getPrimaryKeyColumn();
+                if (!pkColumn) {
+                    setError(`Unable to determine primary key column for table '${table}'`);
+                    return;
+                }
+
+                pkValue = row[pkColumn];
+                if (pkValue === undefined || pkValue === null) {
+                    setError(`Primary key value '${pkColumn}' is missing for this row`);
+                    return;
+                }
             }
 
             const currentVal = row[col];
@@ -833,7 +1000,7 @@ export default function SearchPage() {
             }
 
             const payload = {
-                table: targetTable, // Use the base table for views
+                table: targetTable,
                 pkColumn,
                 pkValue,
                 data: { [col]: newRawValue },
@@ -858,9 +1025,11 @@ export default function SearchPage() {
             // Refresh search to get updated data
             await runSearch();
             setError(null);
+            showToast('Update successful', 'success');
 
         } catch (err) {
             setError(err.message || "Failed to save cell");
+            showToast(err.message || "Failed to save cell", 'error');
         }
     }
 

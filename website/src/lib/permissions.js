@@ -37,8 +37,8 @@ export function hasAccessToEntity(entityName, permissions = {}, viewBaseTableMap
         for (const baseTable of baseTables) {
             const baseTableLower = baseTable.toLowerCase();
 
-            // Special case: base tables can be Tags or Ratings
-            if (baseTableLower === 'tags' || baseTableLower === 'ratings') {
+            // Base Table can be tage or ratings since they are available to everyone
+            if (baseTableLower === "tags" || baseTableLower === "ratings") {
                 continue;
             }
 

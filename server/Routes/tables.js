@@ -76,23 +76,23 @@ router.get('/columns', authenticateToken, validateTableQuery, async (req, res) =
 });
 
 /**
- * GET /api/metadata?table=xxx
- * Get full metadata for a table or view
+ * GET /api/metadata?table=TableName
+ * Get metadata for a specific table or view
  */
-router.get('/metadata', authenticateToken, validateTableQuery, async (req, res) => {
+router.get('/metadata', authenticateToken, async (req, res) => {
     try {
-        const table = req.query.table;
-
-        if (!await entityExists(table)) {
-            return res.status(400).json({ error: `Unknown table or view: ${table}` });
+        const { table } = req.query;
+        
+        if (!table) {
+            return res.status(400).json({ error: 'table parameter required' });
         }
 
         const metadata = await getEntityMetadata(table);
-        res.json(metadata);
+        return res.json(metadata);
 
     } catch (e) {
-        console.error('Failed to load metadata:', e);
-        res.status(500).json({ error: 'Failed to load metadata' });
+        console.error('Metadata error:', e);
+        res.status(500).json({ error: e.message || 'Failed to get metadata' });
     }
 });
 
