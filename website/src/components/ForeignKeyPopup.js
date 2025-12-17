@@ -83,15 +83,15 @@ export default function ForeignKeyPopup({
                 setError("");
 
                 // Load columns
-                const colsRes = await fetch(`/api/columns?table=${encodeURIComponent(table)}`);
+                const colsRes = await apiRequest(`columns?table=${encodeURIComponent(table)}`);
                 const colsJson = await colsRes.json();
                 if (!colsRes.ok) throw new Error(colsJson.error || "Failed to load columns");
 
                 setColumnsMeta(Array.isArray(colsJson) ? colsJson : []);
 
                 // Load record
-                const recordRes = await fetch(
-                    `/api/record?table=${encodeURIComponent(table)}&key=${encodeURIComponent(pkColumn)}&value=${encodeURIComponent(pkValue)}`
+                const recordRes = await apiRequest(
+                    `record?table=${encodeURIComponent(table)}&key=${encodeURIComponent(pkColumn)}&value=${encodeURIComponent(pkValue)}`
                 );
 
                 if (recordRes.status === 404) {
@@ -325,10 +325,9 @@ export default function ForeignKeyPopup({
                 data: normalizedData,
             };
 
-            const res = await fetch("/api/update", {
+            const res = await apiRequest("update", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
+                body: payload,
             });
 
             let json;

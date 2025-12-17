@@ -3,6 +3,7 @@ import TagManager from "./TagManager.js";
 import RatingManager from "./RatingManager.js";
 import { lockedColumns } from "../lib/insert/insertConstants";
 import { excludedRatingsTables, excludedTagsTables } from "../lib/constants.js";
+import { apiRequest } from "../lib/api.js";
 import "../styles/TagManager.css";
 
 /**
@@ -42,17 +43,16 @@ export function FieldInput({ meta, value, onChange, mode, table }) {
         async function checkTags() {
             if (["varchar", "char", "text", "mediumtext", "longtext"].includes(type)) {
                 try {
-                    const res = await fetch("/api/query", {
+                    const res = await apiRequest("query", {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
+                        body: {
                             table: "Tags",
                             columns: ["id"],
                             filters: [
                                 { column: "table_name", operator: "=", value: table },
                                 { column: "column_name", operator: "=", value: name }
                             ]
-                        })
+                        }
                     });
                     if (res.ok) {
                         const json = await res.json();
@@ -94,17 +94,16 @@ export function FieldInput({ meta, value, onChange, mode, table }) {
         async function checkRatings() {
             if (["int", "bigint", "smallint", "mediumint", "tinyint"].includes(type)) {
                 try {
-                    const res = await fetch("/api/query", {
+                    const res = await apiRequest("query", {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
+                        body: {
                             table: "Ratings",
                             columns: ["id"],
                             filters: [
                                 { column: "table_name", operator: "=", value: table },
                                 { column: "column_name", operator: "=", value: name }
                             ]
-                        })
+                        }
                     });
                     if (res.ok) {
                         const json = await res.json();

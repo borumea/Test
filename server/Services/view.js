@@ -45,61 +45,19 @@ function buildWhereClause(filters, allowedColumns) {
 }
 
 /**
- * Ensure Employees table has a column for this view
+ * REMOVED: Views no longer create Employees permission columns
+ *
+ * Permission logic is now:
+ * - User needs permission to ALL base tables to access a view
+ * - No individual view permissions are stored
+ * - Tags and Ratings are public (accessible to everyone)
  */
-async function ensureEmployeesColumn(viewName, baseTable) {
-    const empColName = viewName.toLowerCase();
-
-    if (!/^[a-z0-9_]+$/.test(empColName)) {
-        throw new Error('Resulting Employees column name is invalid');
-    }
-
-    const conn = await pool.getConnection();
-    try {
-        await conn.beginTransaction();
-
-        // Check if column exists
-        const [exists] = await conn.query(
-            `SELECT COLUMN_NAME 
-             FROM INFORMATION_SCHEMA.COLUMNS 
-             WHERE TABLE_SCHEMA = DATABASE()
-               AND TABLE_NAME = 'Employees'
-               AND COLUMN_NAME = ?`,
-            [empColName]
-        );
-
-        // Create column if doesn't exist
-        if (exists.length === 0) {
-            await conn.query(
-                `ALTER TABLE \`Employees\` 
-                 ADD COLUMN \`${empColName}\` BIT NOT NULL DEFAULT b'0'`
-            );
-        }
-
-        // Auto-set permissions based on base table
-        try {
-            await conn.query(
-                `UPDATE \`Employees\` e
-                 SET e.\`${empColName}\` = b'1'
-                 WHERE e.\`${baseTable}\` = b'1'`
-            );
-        } catch (permErr) {
-            console.warn('Permissions auto-set skipped:', permErr.message);
-        }
-
-        await conn.commit();
-        return empColName;
-
-    } catch (err) {
-        await conn.rollback();
-        throw err;
-    } finally {
-        conn.release();
-    }
-}
 
 /**
  * Create a new view
+ *
+ * Views no longer create permission columns in Employees table.
+ * Access is determined by permissions to underlying base tables.
  */
 async function createView(viewName, baseTable, columns, filters, allowedColumns) {
     const whereClause = buildWhereClause(filters, allowedColumns);
@@ -114,17 +72,14 @@ async function createView(viewName, baseTable, columns, filters, allowedColumns)
         // Create the view
         await conn.query(createViewSql);
 
-        // Ensure Employees column exists and set permissions
-        const empColName = await ensureEmployeesColumn(viewName, baseTable);
-
         await conn.commit();
 
         return {
             view: viewName,
-            employeesColumn: empColName,
             baseTable,
             columns,
-            filters
+            filters,
+            message: 'View created successfully. Access granted to users with permissions to base table(s).'
         };
 
     } catch (err) {
@@ -137,15 +92,15 @@ async function createView(viewName, baseTable, columns, filters, allowedColumns)
 
 /**
  * Update an existing view
+ *
+ * Views no longer manage permission columns in Employees table.
+ * Access is determined by permissions to underlying base tables.
  */
 async function updateView(oldViewName, newViewName, baseTable, columns, filters, allowedColumns) {
     const whereClause = buildWhereClause(filters, allowedColumns);
     const selectedCols = columns.map(c => `\`${c}\``).join(', ');
 
     const createNewViewSql = `CREATE OR REPLACE VIEW \`${newViewName}\` AS SELECT ${selectedCols} FROM \`${baseTable}\`${whereClause}`;
-
-    const newEmpCol = newViewName.toLowerCase();
-    const oldEmpCol = oldViewName.toLowerCase();
 
     const conn = await pool.getConnection();
     try {
@@ -163,55 +118,15 @@ async function updateView(oldViewName, newViewName, baseTable, columns, filters,
             }
         }
 
-        // Ensure Employees column exists
-        const [exists] = await conn.query(
-            `SELECT COLUMN_NAME 
-             FROM INFORMATION_SCHEMA.COLUMNS 
-             WHERE TABLE_SCHEMA = DATABASE()
-               AND TABLE_NAME = 'Employees'
-               AND COLUMN_NAME = ?`,
-            [newEmpCol]
-        );
-
-        if (exists.length === 0) {
-            await conn.query(
-                `ALTER TABLE \`Employees\` 
-                 ADD COLUMN \`${newEmpCol}\` BIT NOT NULL DEFAULT b'0'`
-            );
-        }
-
-        // If rename occurred, rename the Employees column
-        if (oldViewName !== newViewName) {
-            try {
-                await conn.query(
-                    `ALTER TABLE \`Employees\` 
-                     RENAME COLUMN \`${oldEmpCol}\` TO \`${newEmpCol}\``
-                );
-            } catch (renameErr) {
-                console.warn('Employees column rename failed (non-fatal):', renameErr.message);
-            }
-        }
-
-        // Auto-set permissions
-        try {
-            await conn.query(
-                `UPDATE \`Employees\` e
-                 SET e.\`${newEmpCol}\` = b'1'
-                 WHERE e.\`${baseTable}\` = b'1'`
-            );
-        } catch (permErr) {
-            console.warn('Permissions auto-set skipped:', permErr.message);
-        }
-
         await conn.commit();
 
         return {
             view: newViewName,
-            employeesColumn: newEmpCol,
             replacedView: oldViewName !== newViewName ? oldViewName : null,
             baseTable,
             columns,
-            filters
+            filters,
+            message: 'View updated successfully. Access granted to users with permissions to base table(s).'
         };
 
     } catch (err) {
@@ -224,10 +139,10 @@ async function updateView(oldViewName, newViewName, baseTable, columns, filters,
 
 /**
  * Delete a view
+ *
+ * Views no longer manage permission columns in Employees table.
  */
 async function deleteView(viewName) {
-    const empCol = viewName.toLowerCase();
-
     const conn = await pool.getConnection();
     try {
         await conn.beginTransaction();
@@ -235,28 +150,12 @@ async function deleteView(viewName) {
         // Drop the view
         await conn.query(`DROP VIEW IF EXISTS \`${viewName}\``);
 
-        // Drop the Employees column if it exists
-        const [colCheck] = await conn.query(
-            `SELECT COLUMN_NAME 
-             FROM INFORMATION_SCHEMA.COLUMNS 
-             WHERE TABLE_SCHEMA = DATABASE() 
-               AND TABLE_NAME = 'Employees' 
-               AND COLUMN_NAME = ?`,
-            [empCol]
-        );
-
-        let columnDropped = false;
-        if (colCheck && colCheck.length > 0) {
-            await conn.query(`ALTER TABLE \`Employees\` DROP COLUMN \`${empCol}\``);
-            columnDropped = true;
-        }
-
         await conn.commit();
 
         return {
             view: viewName,
-            employeesColumnDropped: columnDropped,
-            success: true
+            success: true,
+            message: 'View deleted successfully.'
         };
 
     } catch (err) {

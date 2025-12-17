@@ -25,6 +25,7 @@ import { getStoredUser } from "../lib/auth";
 import { apiRequest } from '../lib/api';
 import { FieldInput, parseLocalDateTime } from "../components/FieldInput";
 import ViewsOverlay from "../components/ViewsOverlay";
+import { hasAccessToEntity, normalizePermissionsArray, permissionsObjectToArray } from "../lib/permissions";
 
 export default function InsertPage() {
     const [loaded, setLoaded] = useState(0);
@@ -49,7 +50,7 @@ export default function InsertPage() {
     const [message, setMessage] = useState("");
     const [messageType, setMessageType] = useState(""); // "success" or "error"
 
-    const [allowedPermissions, setAllowedPermissions] = useState([]);
+    const [allowedPermissions, setAllowedPermissions] = useState({});
     const [viewBaseTableMap, setViewBaseTableMap] = useState({});
     const [initialUniqueValues, setInitialUniqueValues] = useState({});
     const location = useLocation();
@@ -60,44 +61,24 @@ export default function InsertPage() {
     const closeViewsOverlay = () => setShowViewsOverlay(false);
 
     const onPermissionsRefresh = (updatedPermissions) => {
-        const mergedPermissions = [];
-        for (const [key, value] of Object.entries(updatedPermissions)) {
-            if (value === 1) {
-                mergedPermissions.push(key);
-            }
-        }
-        localStorage.setItem("allowedPermissions", JSON.stringify(mergedPermissions));
-        setAllowedPermissions(mergedPermissions);
+        // Store as object format for new permission system
+        localStorage.setItem("permissions", JSON.stringify(updatedPermissions));
+        setAllowedPermissions(updatedPermissions);
+
+        // Also store as array for backwards compatibility
+        const permissionsArray = permissionsObjectToArray(updatedPermissions);
+        localStorage.setItem("allowedPermissions", JSON.stringify(permissionsArray));
     };
 
-    const userHasEditViews = allowedPermissions.includes("edit_views");
+    const userHasEditViews = allowedPermissions["edit_views"] === 1;
 
     /**
      * Check if user has permission to access a table/view
-     * Criteria:
-     * 1. User has direct permission bit for the table/view
-     * 2. It's a view and user has access to ALL base tables
+     * Uses the centralized permissions logic that matches the server
      */
     function userHasAccessToTable(tableName) {
         if (!tableName) return false;
-        
-        const normalized = normalizeTableNameToPermissionKey(tableName);
-        
-        // Direct permission
-        if (allowedPermissions.includes(normalized)) {
-            return true;
-        }
-
-        // Check if it's a view
-        const baseTables = viewBaseTableMap[normalized];
-        if (!baseTables || baseTables.length === 0) {
-            return false; // Not a view or no base tables found
-        }
-
-        // User must have access to ALL base tables
-        return baseTables.every(baseTable => 
-            allowedPermissions.includes(baseTable.toLowerCase())
-        );
+        return hasAccessToEntity(tableName, allowedPermissions, viewBaseTableMap);
     }
 
     // Load view-to-base-table mapping on mount
@@ -166,12 +147,27 @@ export default function InsertPage() {
         return String(name).toLowerCase().replace(/[-\s]/g, '_');
     }
 
+    // Load permissions from localStorage on mount
     useEffect(() => {
         try {
-            const saved = JSON.parse(localStorage.getItem("allowedPermissions") || "[]");
-            setAllowedPermissions(Array.isArray(saved) ? saved.map(s => String(s).toLowerCase()) : []);
-        } catch {
-            setAllowedPermissions([]);
+            // Try loading object format first (new system)
+            const permissionsObj = JSON.parse(localStorage.getItem("permissions") || "{}");
+            if (permissionsObj && typeof permissionsObj === 'object' && Object.keys(permissionsObj).length > 0) {
+                setAllowedPermissions(permissionsObj);
+                return;
+            }
+
+            // Fallback: load array format and convert (backwards compatibility)
+            const savedArray = JSON.parse(localStorage.getItem("allowedPermissions") || "[]");
+            if (Array.isArray(savedArray) && savedArray.length > 0) {
+                const normalized = normalizePermissionsArray(savedArray);
+                setAllowedPermissions(normalized);
+            } else {
+                setAllowedPermissions({});
+            }
+        } catch (err) {
+            console.error("Failed to load permissions:", err);
+            setAllowedPermissions({});
         }
     }, []);
 

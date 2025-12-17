@@ -7,7 +7,7 @@ const router = express.Router();
 const { getAllEntities, getEntityMetadata, entityExists } = require('../Services/metadata');
 const { getRecordByKey } = require('../Services/crud');
 const dbService = require('../Services/db');
-const { authenticateToken } = require('../Middleware/auth');
+const { authenticateToken, hasAccessToEntity } = require('../Middleware/auth');
 const { validateTableQuery } = require('../Middleware/validation');
 
 /**
@@ -143,10 +143,11 @@ router.get('/record', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: `Unknown table: ${table}` });
         }
 
-        // Check permission
-        const tableLower = table.toLowerCase();
+        // Check permission using new logic
         const permissions = req.user?.permissions || {};
-        if (!permissions[tableLower] || permissions[tableLower] !== 1) {
+        const hasAccess = await hasAccessToEntity(table, permissions);
+
+        if (!hasAccess) {
             return res.status(403).json({ error: `Access denied to table: ${table}` });
         }
 

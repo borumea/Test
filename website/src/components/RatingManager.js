@@ -61,17 +61,16 @@ export default function RatingManager({
         setLoading(true);
         setError("");
         try {
-            const res = await fetch("/api/query", {
+            const res = await apiRequest("query", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
+                body: {
                     table: "Ratings",
                     columns: ["id", "table_name", "column_name", "shape", "max_value", "created_by", "created_at"],
                     filters: [
                         { column: "table_name", operator: "=", value: table },
                         { column: "column_name", operator: "=", value: column }
                     ]
-                })
+                }
             });
 
             if (!res.ok) {
@@ -111,17 +110,17 @@ export default function RatingManager({
         await loadRatingConfig();
 
         // Check if rating config exists after save
-        const res = await fetch("/api/query", {
+        const res = await apiRequest("query", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+            
+            body: {
                 table: "Ratings",
                 columns: ["id"],
                 filters: [
                     { column: "table_name", operator: "=", value: table },
                     { column: "column_name", operator: "=", value: column }
                 ]
-            })
+            }
         });
 
         const json = await res.json();
@@ -249,10 +248,10 @@ function RatingConfigModal({ table, column, existingConfig, onClose, onSave }) {
 
             if (existingConfig) {
                 // Update existing config
-                const res = await fetch("/api/update", {
+                const res = await apiRequest("update", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
+                    
+                    body: {
                         table: "Ratings",
                         pkColumn: "id",
                         pkValue: existingConfig.id,
@@ -269,10 +268,10 @@ function RatingConfigModal({ table, column, existingConfig, onClose, onSave }) {
                 }
             } else {
                 // Insert new config
-                const res = await fetch("/api/insert", {
+                const res = await apiRequest("insert", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
+                    
+                    body: {
                         table: "Ratings",
                         data: {
                             table_name: table,
@@ -310,14 +309,14 @@ function RatingConfigModal({ table, column, existingConfig, onClose, onSave }) {
         setError("");
 
         try {
-            const res = await fetch("/api/delete", {
+            const res = await apiRequest("delete", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
+                
+                body: {
                     table: "Ratings",
                     pkColumn: "id",
                     pkValues: [existingConfig.id]
-                })
+                }
             });
 
             if (!res.ok) {

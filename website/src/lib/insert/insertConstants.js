@@ -1,3 +1,5 @@
+import { apiRequest } from '../api';
+
 export const excludedTables = [
     "Employees",
     "Tags",
@@ -21,31 +23,55 @@ export const excludedViews = [
     "Imaging_Entry_View",
 ]
 
+/**
+ * Views API helpers using centralized apiRequest
+ * All methods include JWT authentication automatically
+ */
 export const viewsAPI = {
-    listViews: () => fetch("/api/views/list").then(r => r.json()),
-    createView: (payload) => fetch("/api/views/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    }).then(r => r.json()),
-    updateView: (payload) => fetch("/api/views/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    }).then(r => r.json()),
-    deleteView: (payload) => fetch("/api/views/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    }).then(r => r.json()),
-    loadTables: () => fetch("/api/tables").then(r => r.json()),
-    loadBaseTables: () => fetch("/api/base-tables").then(r => r.json()),
-    loadColumnsMeta: (table) => fetch(`/api/columns?table=${encodeURIComponent(table)}`).then(r => r.json()),
-    refreshPermissions: (username) => fetch("/api/auth/refresh-permissions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username })
-    }).then(r => r.json()),
+    listViews: async () => {
+        const response = await apiRequest("views/list");
+        return response.json();
+    },
+    createView: async (payload) => {
+        const response = await apiRequest("views/create", {
+            method: "POST",
+            body: payload
+        });
+        return response.json();
+    },
+    updateView: async (payload) => {
+        const response = await apiRequest("views/update", {
+            method: "POST",
+            body: payload
+        });
+        return response.json();
+    },
+    deleteView: async (payload) => {
+        const response = await apiRequest("views/delete", {
+            method: "POST",
+            body: payload
+        });
+        return response.json();
+    },
+    loadTables: async () => {
+        const response = await apiRequest("tables");
+        return response.json();
+    },
+    loadBaseTables: async () => {
+        const response = await apiRequest("base-tables");
+        return response.json();
+    },
+    loadColumnsMeta: async (table) => {
+        const response = await apiRequest(`columns?table=${encodeURIComponent(table)}`);
+        return response.json();
+    },
+    refreshPermissions: async (username) => {
+        const response = await apiRequest("auth/refresh-permissions", {
+            method: "POST",
+            body: { username }
+        });
+        return response.json();
+    },
 };
 
 // Columns that should be auto-populated on insert

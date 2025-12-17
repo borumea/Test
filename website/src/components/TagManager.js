@@ -86,10 +86,9 @@ export default function TagManager({
         setLoading(true);
         setError("");
         try {
-            const res = await fetch("/api/query", {
+            const res = await apiRequest("query", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
+                body: {
                     table: "Tags",
                     columns: ["id", "table_name", "column_name", "tag_value", "color", "created_by", "created_at"],
                     filters: [
@@ -97,7 +96,7 @@ export default function TagManager({
                         { column: "column_name", operator: "=", value: column }
                     ],
                     orderBy: [{ column: "created_at", direction: "DESC" }]
-                })
+                }
             });
 
             if (!res.ok) {
@@ -171,17 +170,16 @@ export default function TagManager({
         await loadTags();
 
         // Check if tags exist after save
-        const res = await fetch("/api/query", {
+        const res = await apiRequest("query", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+            body: {
                 table: "Tags",
                 columns: ["id"],
                 filters: [
                     { column: "table_name", operator: "=", value: table },
                     { column: "column_name", operator: "=", value: column }
                 ]
-            })
+            }
         });
 
         const json = await res.json();
@@ -360,10 +358,9 @@ function TagManagementModal({ table, column, availableTags, onClose, onSave }) {
             for (const tag of newTags) {
                 const createdAt = formatDateTimeLocal();
 
-                const res = await fetch("/api/insert", {
+                const res = await apiRequest("insert", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
+                    body: {
                         table: "Tags",
                         data: {
                             table_name: tag.table_name,
@@ -373,7 +370,7 @@ function TagManagementModal({ table, column, availableTags, onClose, onSave }) {
                             created_by: currentUser,
                             created_at: createdAt
                         }
-                    })
+                    }
                 });
 
                 if (!res.ok) {
@@ -388,14 +385,13 @@ function TagManagementModal({ table, column, availableTags, onClose, onSave }) {
                 setDeleting(true);
                 const deleteIds = deletedTags.map(t => t.id);
 
-                const res = await fetch("/api/delete", {
+                const res = await apiRequest("delete", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
+                    body: {
                         table: "Tags",
                         pkColumn: "id",
                         pkValues: deleteIds
-                    })
+                    }
                 });
 
                 if (!res.ok) {

@@ -3,6 +3,7 @@
 
 const jwt = require('jsonwebtoken');
 const securityConfig = require('../Config/security');
+const { getEntityMetadata, entityExists } = require('../Services/metadata');
 
 /**
  * Middleware: Verify JWT token from Authorization header
@@ -27,29 +28,101 @@ function authenticateToken(req, res, next) {
 }
 
 /**
+ * Check if user has access to a specific table or view
+ *
+ * Access is granted if:
+ * - Entity is 'Tags' or 'Ratings' (public access)
+ * - User has direct permission to the entity (permission value of 1)
+ * - Entity is a view AND user has permission to ALL base tables
+ *
+ * @param {string} entityName - table or view name
+ * @param {object} permissions - user's permissions object
+ * @returns {Promise<boolean>}
+ */
+async function hasAccessToEntity(entityName, permissions = {}) {
+    const entityLower = entityName.toLowerCase();
+
+    // Tags and Ratings are accessible to everyone
+    if (entityLower === 'tags' || entityLower === 'ratings') {
+        return true;
+    }
+
+    // Check for direct permission
+    if (permissions[entityLower] === 1) {
+        return true;
+    }
+
+    // Check if entity exists
+    if (!await entityExists(entityName)) {
+        return false;
+    }
+
+    // Get metadata to determine if it's a view
+    try {
+        const metadata = await getEntityMetadata(entityName);
+
+        // If it's a base table, direct permission is required (already checked above)
+        if (metadata.type === 'table') {
+            return false;
+        }
+
+        // For views, check if user has access to ALL base tables
+        if (metadata.type === 'view' && metadata.baseTables && metadata.baseTables.length > 0) {
+            for (const baseTable of metadata.baseTables) {
+                const baseTableLower = baseTable.toLowerCase();
+
+                // Special case: base tables can be Tags or Ratings
+                if (baseTableLower === 'tags' || baseTableLower === 'ratings') {
+                    continue;
+                }
+
+                // User must have permission to this base table
+                if (!permissions[baseTableLower] || permissions[baseTableLower] !== 1) {
+                    return false;
+                }
+            }
+
+            // User has access to all base tables
+            return true;
+        }
+
+        return false;
+    } catch (err) {
+        console.error(`Error checking access to ${entityName}:`, err);
+        return false;
+    }
+}
+
+/**
  * Middleware factory: Check if user has permission for a specific table/view
  * @param {string} tableParam - name of req.body or req.query property containing table name
  */
 function requireTablePermission(tableParam = 'table') {
-    return (req, res, next) => {
+    return async (req, res, next) => {
         const table = req.body?.[tableParam] || req.query?.[tableParam];
 
         if (!table) {
             return res.status(400).json({ error: `${tableParam} parameter required` });
         }
 
-        const tableLower = table.toLowerCase();
         const permissions = req.user?.permissions || {};
 
-        // Check if user has permission for this table (permission value of 1)
-        if (!permissions[tableLower] || permissions[tableLower] !== 1) {
-            return res.status(403).json({
-                error: `Access denied to table/view: ${table}`,
-                table: table
-            });
-        }
+        // Check access using the new logic
+        try {
+            const hasAccess = await hasAccessToEntity(table, permissions);
 
-        next();
+            if (!hasAccess) {
+                return res.status(403).json({
+                    error: `Access denied to table/view: ${table}`,
+                    table: table
+                });
+            }
+
+            next();
+        } catch (err) {
+            console.error('Permission check error:', err);
+            return res.status(500).json({ error: 'Failed to check permissions' });
+        }
     };
 }
 
@@ -72,4 +145,5 @@ module.exports = {
     authenticateToken,
     requireTablePermission,
     requireEmployeesPermission,
+    hasAccessToEntity,
 };
