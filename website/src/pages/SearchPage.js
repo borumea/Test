@@ -15,6 +15,7 @@ import ForeignKeyPopup from "../components/ForeignKeyPopup";
 import { FilterRow } from "../components/FilterRow";
 import { apiRequest } from '../lib/api';
 import { hasAccessToEntity, normalizePermissionsArray } from '../lib/permissions';
+import { exportToCSV, showToast, setupKeyboardShortcuts, copyToClipboard } from '../lib/uxHelpers';
 
 const SEARCH_STATE_KEY = "searchPageState";
 const MemoFilterRow = React.memo(FilterRow);
@@ -166,6 +167,27 @@ export default function SearchPage() {
         window.addEventListener("click", handleClick);
         return () => window.removeEventListener("click", handleClick);
     }, []);
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        return setupKeyboardShortcuts({
+            'ctrl+e': (e) => {
+                e.preventDefault();
+                if (results.length > 0) {
+                    exportToCSV(results, `${table}_export`);
+                    showToast('Exported to CSV', 'success');
+                }
+            },
+            'ctrl+f': (e) => {
+                e.preventDefault();
+                setShowAdvanced(true);
+            },
+            'escape': () => {
+                setContextMenu(null);
+                setShowAdvanced(false);
+            }
+        });
+    }, [results, table]);
 
     useEffect(() => {
         if (table && !hasAccessToEntity(table, allowedPermissions, viewBaseTableMap)) {
@@ -931,6 +953,19 @@ export default function SearchPage() {
                                     title={editMode ? "Enter View Mode" : "Enter Edit Mode (inline editing)"}
                                 >
                                     {editMode ? "Edit Mode" : "View Mode"}
+                                </button>
+                            )}
+
+                            {results.length > 0 && (
+                                <button
+                                    className="btn"
+                                    onClick={() => {
+                                        exportToCSV(results, `${table}_export`);
+                                        showToast(`Exported ${results.length} rows to CSV`, 'success');
+                                    }}
+                                    title="Export current page to CSV"
+                                >
+                                    📥 Export CSV
                                 </button>
                             )}
 
