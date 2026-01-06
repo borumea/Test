@@ -13,11 +13,11 @@ const dashboardsConfig = [
         chartType: "metric",
         table: "Donations",
         columns: [
-            "grand_total_value"
+            "Grand Total Value"
         ],
-        groupBy: "grand_total_value",
+        groupBy: "Grand Total Value",
         aggregate: {
-            type: "SUM", column: "grand_total_value"
+            type: "SUM", column: "Grand Total Value"
         },
         preferredSize: {
             width: 250,
@@ -38,11 +38,11 @@ const dashboardsConfig = [
         chartType: "metric",
         table: "Donations",
         columns: [
-            "grand_total_value"
+            "Grand Total Value"
         ],
-        groupBy: "grand_total_value",
+        groupBy: "Grand Total Value",
         aggregate: {
-            type: "SUM", column: "grand_total_value"
+            type: "SUM", column: "Grand Total Value"
         },
         preferredSize: {
             width: 250,
@@ -56,17 +56,17 @@ const dashboardsConfig = [
     {
         id: "inventory_pie_chart",
         title: "Inventory Product Categories Breakdown",
-        description: "Shows the relative proportion of each category in the `item_name` column.",
+        description: "Shows the relative proportion of each category in the `Item Name` column.",
         tables: [
             "Inventory"
         ],
         table: "Inventory",
         chartType: "pie",
-        groupBy: "item_name",
+        groupBy: "Item Name",
         aggregate: { type: "COUNT", column: "*" },
         limit: 20,
         filters: [
-            { column: "item_name", operator: "IS NOT", value: null },
+            { column: "Item Name", operator: "IS NOT", value: null },
         ],
         preferredSize: {
             width: 400,

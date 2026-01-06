@@ -43,6 +43,14 @@ LOG_LEVEL=INFO            # DEBUG | INFO | WARN | ERROR
 NODE_ENV=development      # development | production
 ```
 
+This file can be encrypted using 
+
+```
+cd server
+node Utils/encrypt-config.js
+# Select option 1 to encryp sensitive values in .env file
+```
+
 ### Alternative: db.config.js
 Instead of environment variables, create `Config/db.config.js`:
 ```javascript

@@ -95,7 +95,7 @@ function writeEnvFile(filePath, data) {
 async function encryptEnvFile() {
     const envPath = path.join(__dirname, '..', '.env');
 
-    console.log('🔒 Encrypting sensitive values in .env file');
+    console.log('Encrypting sensitive values in .env file');
     console.log('='.repeat(50));
 
     const env = parseEnvFile(envPath);
@@ -106,11 +106,11 @@ async function encryptEnvFile() {
     for (const key of SENSITIVE_KEYS) {
         if (env[key] && !isEncrypted(env[key])) {
             if (key === 'MASTER_ENCRYPTION_KEY') {
-                console.log(`⚠️  Skipping ${key} (should not be encrypted)`);
+                console.log(`Skipping ${key} (should not be encrypted)`);
                 continue;
             }
 
-            console.log(`🔐 Encrypting ${key}...`);
+            console.log(`Encrypting ${key}...`);
             env[key] = encrypt(env[key]);
             changed = true;
         } else if (env[key] && isEncrypted(env[key])) {
@@ -122,13 +122,13 @@ async function encryptEnvFile() {
         // Backup original file
         const backupPath = envPath + '.backup';
         fs.copyFileSync(envPath, backupPath);
-        console.log(`📦 Backup created: ${backupPath}`);
+        console.log(`Backup created: ${backupPath}`);
 
         // Write encrypted file
         writeEnvFile(envPath, env);
-        console.log(`✅ Encrypted values written to ${envPath}`);
+        console.log(`Encrypted values written to ${envPath}`);
     } else {
-        console.log('ℹ️  No changes needed');
+        console.log('No changes needed');
     }
 }
 
@@ -138,7 +138,7 @@ async function encryptEnvFile() {
 async function decryptEnvFile() {
     const envPath = path.join(__dirname, '..', '.env');
 
-    console.log('🔓 Decrypting sensitive values in .env file');
+    console.log('Decrypting sensitive values in .env file');
     console.log('='.repeat(50));
 
     const env = parseEnvFile(envPath);
@@ -148,12 +148,12 @@ async function decryptEnvFile() {
 
     for (const key of SENSITIVE_KEYS) {
         if (env[key] && isEncrypted(env[key])) {
-            console.log(`🔑 Decrypting ${key}...`);
+            console.log(`Decrypting ${key}...`);
             try {
                 env[key] = decrypt(env[key]);
                 changed = true;
             } catch (error) {
-                console.error(`❌ Failed to decrypt ${key}: ${error.message}`);
+                console.error(`Failed to decrypt ${key}: ${error.message}`);
             }
         }
     }
@@ -162,14 +162,14 @@ async function decryptEnvFile() {
         // Backup encrypted file
         const backupPath = envPath + '.encrypted';
         fs.copyFileSync(envPath, backupPath);
-        console.log(`📦 Encrypted backup: ${backupPath}`);
+        console.log(`Encrypted backup: ${backupPath}`);
 
         // Write decrypted file
         writeEnvFile(envPath, env);
-        console.log(`✅ Decrypted values written to ${envPath}`);
-        console.log('⚠️  WARNING: File now contains plaintext secrets!');
+        console.log(`Decrypted values written to ${envPath}`);
+        console.log('WARNING: File now contains plaintext secrets!');
     } else {
-        console.log('ℹ️  No encrypted values found');
+        console.log('No encrypted values found');
     }
 }
 
@@ -179,17 +179,17 @@ async function decryptEnvFile() {
 async function encryptValue() {
     const value = await question('Enter value to encrypt: ');
     if (!value) {
-        console.log('❌ No value provided');
+        console.log('No value provided');
         return;
     }
 
     try {
         const encrypted = encrypt(value);
-        console.log('\n🔒 Encrypted value:');
+        console.log('\nEncrypted value:');
         console.log(encrypted);
-        console.log('\n✅ Copy this value to your .env or config file');
+        console.log('\nCopy this value to your .env or config file');
     } catch (error) {
-        console.error(`❌ Encryption failed: ${error.message}`);
+        console.error(`Encryption failed: ${error.message}`);
     }
 }
 
@@ -199,16 +199,16 @@ async function encryptValue() {
 async function decryptValue() {
     const value = await question('Enter encrypted value to decrypt: ');
     if (!value) {
-        console.log('❌ No value provided');
+        console.log('No value provided');
         return;
     }
 
     try {
         const decrypted = decrypt(value);
-        console.log('\n🔓 Decrypted value:');
+        console.log('\nDecrypted value:');
         console.log(decrypted);
     } catch (error) {
-        console.error(`❌ Decryption failed: ${error.message}`);
+        console.error(`Decryption failed: ${error.message}`);
     }
 }
 
@@ -216,7 +216,7 @@ async function decryptValue() {
  * Main menu
  */
 async function main() {
-    console.log('\n🔐 Configuration Encryption Utility');
+    console.log('\nConfiguration Encryption Utility');
     console.log('='.repeat(50));
     console.log('1. Encrypt sensitive values in .env file');
     console.log('2. Decrypt sensitive values in .env file');
@@ -241,12 +241,12 @@ async function main() {
             await decryptValue();
             break;
         case '5':
-            console.log('👋 Goodbye!');
+            console.log('Goodbye!');
             rl.close();
             process.exit(0);
             return;
         default:
-            console.log('❌ Invalid option');
+            console.log('Invalid option');
     }
 
     console.log('');
