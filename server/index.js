@@ -15,11 +15,11 @@ const tablesRoutes = require('./Routes/tables');
 const dataRoutes = require('./Routes/data');
 const viewsRoutes = require('./Routes/views');
 
-// --- Configuration ---
-const PORT = dbConfig.port || process.env.PORT || 3001;
-const DB_HOST = dbConfig.host || process.env.DB_HOST;
-const DB_USER = dbConfig.user || process.env.DB_USER;
-const DB_NAME = dbConfig.database || process.env.DB_NAME;
+// --- Configuration (now handled by db.config.js with .env priority and auto-decryption) ---
+const PORT = dbConfig.port;
+const DB_HOST = dbConfig.host;
+const DB_USER = dbConfig.user;
+const DB_NAME = dbConfig.database;
 
 // --- Initialize Express app ---
 const app = express();

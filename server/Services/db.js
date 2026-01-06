@@ -4,11 +4,11 @@
 const mysql = require('mysql2/promise');
 const dbConfig = require('../Config/db.config');
 
-// --- Database configuration ---
-const DB_HOST = dbConfig.host || process.env.DB_HOST;
-const DB_USER = dbConfig.user || process.env.DB_USER;
-const DB_PASS = dbConfig.password || process.env.DB_PASS;
-const DB_NAME = dbConfig.database || process.env.DB_NAME;
+// --- Database configuration (now handled by db.config.js with .env priority and auto-decryption) ---
+const DB_HOST = dbConfig.host;
+const DB_USER = dbConfig.user;
+const DB_PASS = dbConfig.password;
+const DB_NAME = dbConfig.database;
 
 // Create connection pool
 const pool = mysql.createPool({

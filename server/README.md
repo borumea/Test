@@ -12,23 +12,65 @@ This document describes the Express API implemented in `server/index.js`. It lis
 
 ## Configuration
 
-1. db.config.js or environment variables
+### 1. Environment Variables (.env) - **RECOMMENDED**
 
-- The server reads DB configuration from `./db.config` (JS object) or these environment variables:
-  - DB_HOST (or dbConfig.host)
-  - DB_USER (or dbConfig.user)
-  - DB_PASS (or dbConfig.password)
-  - DB_NAME (or dbConfig.database)
-  - PORT (or dbConfig.port)
+The server **prioritizes** `.env` file configuration over legacy config files. Create a `.env` file in the `server/` directory:
 
-2. Listening address
+```bash
+# Copy the example file
+cp .env.example .env
 
-   - Server binds to 127.0.0.1 and the configured PORT
+# Edit with your values
+DB_HOST=localhost
+DB_USER=root
+DB_PASS=your_password
+DB_NAME=your_database
+PORT=3001
+JWT_SECRET=your_jwt_secret_here
+CONFIG_ENCRYPTION_KEY=your_encryption_key_here
+```
 
-3. Optional dependencies
-   - `multer` is used if available for multipart/form-data file uploads (files stored in memory)
-   - `bcrypt` is used for password hashing
-   - `mysql2` is used for execution of MySQL queries
+**Configuration Priority:**
+1. **`.env` file** (highest priority - **RECOMMENDED**)
+2. `db.config.legacy.js` (fallback only)
+3. Default values (lowest priority)
+
+### 2. Encryption Support
+
+You can store sensitive values (like passwords) **encrypted** in your `.env` file:
+
+```bash
+# Encrypt a password
+node server/Utils/encrypt-config.js encrypt "myPassword123"
+# Output: U2FsdGVkX1+XqK5J...
+
+# Add encrypted value to .env
+DB_PASS=U2FsdGVkX1+XqK5J...
+
+# The server automatically detects and decrypts it!
+```
+
+**Encryption Commands:**
+- Encrypt: `node server/Utils/encrypt-config.js encrypt "your_value"`
+- Decrypt: `node server/Utils/encrypt-config.js decrypt "encrypted_value"`
+- Check: `node server/Utils/encrypt-config.js check "value"`
+
+**Note:** Both plain text and encrypted values work. The server auto-detects encrypted values.
+
+### 3. Legacy Configuration (Fallback)
+
+If you prefer the old method, rename your `db.config.js` to `db.config.legacy.js`. It will be used as a fallback if `.env` values are not set.
+
+### 4. Listening address
+
+- Server binds to 127.0.0.1 and the configured PORT
+
+### 5. Optional dependencies
+- `dotenv` is used for loading .env files
+- `crypto-js` is used for encrypting/decrypting config values
+- `multer` is used if available for multipart/form-data file uploads (files stored in memory)
+- `bcrypt` is used for password hashing
+- `mysql2` is used for execution of MySQL queries
 
 ### Authentication & user-management (employees table)
 

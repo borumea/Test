@@ -1,6 +1,7 @@
 # Other
 build
-db.config.js
+db.config.legacy.js
+!Config/db.config.js
 
 # Logs
 logs
