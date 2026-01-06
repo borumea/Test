@@ -14,7 +14,7 @@ const dashboardsConfig = [
         table: "Donations",
         aggregate: {
             type: "SUM",
-            column: "grand_total_value"
+            column: "Grand Total Value"
         },
         filters: [],  // No filters - sum all donations
         preferredSize: {
@@ -37,7 +37,7 @@ const dashboardsConfig = [
         table: "Donations",
         aggregate: {
             type: "SUM",
-            column: "grand_total_value"
+            column: "Grand Total Value"
         },
         filters: [],  // No filters - sum all donations
         preferredSize: {
