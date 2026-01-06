@@ -205,7 +205,9 @@ async function getViewColumnTableMap(viewName, baseTables) {
             return columnMap;
         }
     } catch (err) {
-        console.warn(`Failed to query VIEW_COLUMN_USAGE for ${viewName}:`, err.message);
+        if (! err.message === "Unknown table 'VIEW_COLUMN_USAGE' in information_schema") {
+            console.warn(`Failed to query VIEW_COLUMN_USAGE for ${viewName}:`, err.message);
+        }
     }
 
     // Fallback: Match columns to base tables by querying each table's schema

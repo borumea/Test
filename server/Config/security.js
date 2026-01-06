@@ -15,18 +15,18 @@ module.exports = {
 
     rateLimit: {
         windowMs: 1 * 60 * 1000, // 1 minute
-        maxRequests: 100, // Changed from 60000 to 100 - reasonable limit for general API requests
+        maxRequests: 100, // Seems like a reasonable limit for general API requests
     },
 
     rateLimitAuth: {
-        windowMs: 15 * 60 * 1000, // Changed to 15 minutes for better brute force protection
-        maxRequests: 5, // Changed from 50000 to 5 - prevents brute force attacks on login
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        maxRequests: 5, // prevents brute force attacks on login
     },
 
     cors: {
         // CORS origin configuration
         // In development: allows localhost:3000 or custom CORS_ORIGIN
-        // Use CORS_ALLOW_ALL=true to allow all origins (development only!)
+        // Use CORS_ALLOW_ALL=true to allow all origins (dev only)
         origin: process.env.CORS_ALLOW_ALL === 'true'
             ? true  // Allow all origins
             : (process.env.CORS_ORIGIN || 'http://localhost:3000'), // Specific origin(s)
