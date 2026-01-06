@@ -1,6 +1,6 @@
 # Other
 build
-Config/
+Config/*
 encrypt-config.js
 
 # Logs
