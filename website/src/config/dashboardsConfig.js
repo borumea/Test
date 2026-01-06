@@ -12,13 +12,11 @@ const dashboardsConfig = [
         ],
         chartType: "metric",
         table: "Donations",
-        columns: [
-            "Grand Total Value"
-        ],
-        groupBy: "Grand Total Value",
         aggregate: {
-            type: "SUM", column: "Grand Total Value"
+            type: "SUM",
+            column: "Grand Total Value"
         },
+        filters: [],  // No filters - sum all donations
         preferredSize: {
             width: 250,
             height: 300,
@@ -26,7 +24,7 @@ const dashboardsConfig = [
         minWidth: 120,           // Minimum 250px wide
         minHeight: 100,          // Minimum 300px tall
         aspectRatio: 5/6,        // 5:6 aspect ratio
-        lockAspectRatio: true,   // Enforce aspect ratio during resize
+        lockAspectRatio: false,   // Enforce aspect ratio during resize
     },
     {
         id: "donations_total_value_2",
@@ -37,13 +35,11 @@ const dashboardsConfig = [
         ],
         chartType: "metric",
         table: "Donations",
-        columns: [
-            "Grand Total Value"
-        ],
-        groupBy: "Grand Total Value",
         aggregate: {
-            type: "SUM", column: "Grand Total Value"
+            type: "SUM",
+            column: "Grand Total Value"
         },
+        filters: [],  // No filters - sum all donations
         preferredSize: {
             width: 250,
             height: 300,
@@ -51,22 +47,22 @@ const dashboardsConfig = [
         minWidth: 120,           // Minimum 250px wide
         minHeight: 100,          // Minimum 300px tall
         aspectRatio: 5/6,        // 5:6 aspect ratio
-        lockAspectRatio: true,   // Enforce aspect ratio during resize
+        lockAspectRatio: false,   // Enforce aspect ratio during resize
     },
     {
         id: "inventory_pie_chart",
         title: "Inventory Product Categories Breakdown",
-        description: "Shows the relative proportion of each category in the `Item Name` column.",
+        description: "Shows the relative proportion of each category in the `item_name` column.",
         tables: [
-            "Inventory"
+            "Ebay_Inventory"
         ],
-        table: "Inventory",
+        table: "Ebay_Inventory",
         chartType: "pie",
-        groupBy: "Item Name",
+        groupBy: "item_name",
         aggregate: { type: "COUNT", column: "*" },
         limit: 20,
         filters: [
-            { column: "Item Name", operator: "IS NOT", value: null },
+            { column: "item_name", operator: "IS NOT", value: null },
         ],
         preferredSize: {
             width: 400,

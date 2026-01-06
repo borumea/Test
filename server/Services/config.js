@@ -75,14 +75,34 @@ function loadEnv() {
 
 /**
  * Load and decrypt database configuration
+ * Priority: .env file first, then db.config.js as fallback
  */
 function loadDbConfig() {
-    // Load .env first to ensure MASTER_ENCRYPTION_KEY is available
+    // Load .env first (this also loads MASTER_ENCRYPTION_KEY and decrypts all values)
     loadEnv();
 
+    // Check if we have database config from environment variables (.env)
+    const hasEnvConfig = process.env.DB_HOST && process.env.DB_USER &&
+                         (process.env.DB_PASS || process.env.DB_PASSWORD) &&
+                         process.env.DB_NAME;
+
+    if (hasEnvConfig) {
+        // Use environment variables (already decrypted by loadEnv)
+        const config = {
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASS || process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+            port: parseInt(process.env.PORT || '4000', 10)
+        };
+
+        logger.info('Database configuration loaded from .env file');
+        return config;
+    }
+
+    // Fall back to db.config.js if .env doesn't have complete config
     const configPath = path.join(__dirname, '..', 'Config', 'db.config.js');
 
-    // Try to load db.config.js
     if (fs.existsSync(configPath)) {
         try {
             delete require.cache[require.resolve(configPath)];
@@ -91,7 +111,7 @@ function loadDbConfig() {
             // Decrypt sensitive values
             const decrypted = decryptObject(dbConfig);
 
-            logger.info('Database configuration loaded from db.config.js');
+            logger.info('Database configuration loaded from db.config.js (fallback)');
 
             return decrypted;
         } catch (error) {
@@ -100,21 +120,16 @@ function loadDbConfig() {
         }
     }
 
-    // Fall back to environment variables
+    // Last resort: use environment variables with defaults
     const config = {
         host: process.env.DB_HOST || 'localhost',
         user: process.env.DB_USER,
         password: process.env.DB_PASS || process.env.DB_PASSWORD,
         database: process.env.DB_NAME,
-        port: parseInt(process.env.DB_PORT || '3306', 10)
+        port: parseInt(process.env.PORT || '4000', 10)
     };
 
-    // Decrypt password if encrypted
-    if (config.password) {
-        config.password = decrypt(config.password);
-    }
-
-    logger.info('Database configuration loaded from environment variables');
+    logger.warn('Database configuration loaded from environment variables (incomplete)');
 
     return config;
 }

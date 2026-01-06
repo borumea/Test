@@ -6,10 +6,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 
 // Load encrypted configuration first
-const { loadEnv } = require('./Services/config');
-loadEnv(); // Load and decrypt .env file
+const { loadDbConfig } = require('./Services/config');
+const dbConfig = loadDbConfig(); // Load and decrypt database config (.env first, then db.config.js)
 
-const dbConfig = require('./Config/db.config');
 const securityConfig = require('./Config/security');
 const { generalLimiter } = require('./Middleware/rateLimiter');
 const { createLogger } = require('./Services/logger');

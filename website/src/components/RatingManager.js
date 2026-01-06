@@ -3,6 +3,7 @@ import { formatDateTimeLocal } from "../lib/insert/insertNormalization";
 import "../styles/RatingManager.css";
 import { getStoredUser } from "../lib/auth";
 import { apiRequest } from '../lib/api';
+import { clearColumnMetadataCache } from './FieldInput';
 
 const SHAPES = {
     star: { label: "Stars", color: "#FFD700", symbol: "★", emptySymbol: "☆" },
@@ -109,10 +110,13 @@ export default function RatingManager({
     const handleModalSave = async () => {
         await loadRatingConfig();
 
+        // Clear the FieldInput cache so new ratings are detected
+        clearColumnMetadataCache(table);
+
         // Check if rating config exists after save
         const res = await apiRequest("query", {
             method: "POST",
-            
+
             body: {
                 table: "Ratings",
                 columns: ["id"],

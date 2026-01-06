@@ -6,6 +6,64 @@ import { excludedRatingsTables, excludedTagsTables } from "../lib/constants.js";
 import { apiRequest } from "../lib/api.js";
 import "../styles/TagManager.css";
 
+// Module-level cache for column metadata to avoid redundant API calls
+// Cache both the data AND in-flight promises to prevent race conditions
+const columnMetadataCache = {};
+const columnMetadataPromises = {};
+
+/**
+ * Clear the metadata cache for a specific table (or all tables)
+ * Call this after creating/updating/deleting tags or ratings
+ */
+export function clearColumnMetadataCache(table = null) {
+    if (table) {
+        delete columnMetadataCache[table];
+        delete columnMetadataPromises[table];
+    } else {
+        // Clear all caches
+        Object.keys(columnMetadataCache).forEach(key => delete columnMetadataCache[key]);
+        Object.keys(columnMetadataPromises).forEach(key => delete columnMetadataPromises[key]);
+    }
+}
+
+/**
+ * Fetch column metadata for a table (cached with promise deduplication)
+ * Uses promise cache to ensure only 1 API call per table, even if called simultaneously
+ */
+async function getColumnMetadata(table) {
+    // Return cached data if available
+    if (columnMetadataCache[table]) {
+        return columnMetadataCache[table];
+    }
+
+    // Return in-flight promise if one exists (prevents duplicate requests)
+    if (columnMetadataPromises[table]) {
+        return columnMetadataPromises[table];
+    }
+
+    // Create and cache the promise
+    const promise = (async () => {
+        try {
+            const res = await apiRequest(`column-metadata?table=${encodeURIComponent(table)}`);
+            if (res.ok) {
+                const metadata = await res.json();
+                columnMetadataCache[table] = metadata;
+                return metadata;
+            }
+        } catch (err) {
+            console.error('Failed to fetch column metadata:', err);
+        } finally {
+            // Clear the promise from cache after completion
+            delete columnMetadataPromises[table];
+        }
+
+        return { tags: {}, ratings: {} };
+    })();
+
+    columnMetadataPromises[table] = promise;
+    return promise;
+}
+
 /**
  * FieldInput Component
  * Handles rendering the appropriate input type for a given column,
@@ -38,37 +96,26 @@ export function FieldInput({ meta, value, onChange, mode, table }) {
     const isReadonly = (mode === "edit" && meta.isPrimary) || (mode === "edit" && isLocked);
     const isDisabled = isReadonly;
 
-    // Check for tags on mount for text-type fields
+    // Check for tags and ratings on mount using batch endpoint
     useEffect(() => {
-        async function checkTags() {
+        async function checkMetadata() {
+            const metadata = await getColumnMetadata(table);
+
+            // Check for tags in text-type fields
             if (["varchar", "char", "text", "mediumtext", "longtext"].includes(type)) {
-                try {
-                    const res = await apiRequest("query", {
-                        method: "POST",
-                        body: {
-                            table: "Tags",
-                            columns: ["id"],
-                            filters: [
-                                { column: "table_name", operator: "=", value: table },
-                                { column: "column_name", operator: "=", value: name }
-                            ]
-                        }
-                    });
-                    if (res.ok) {
-                        const json = await res.json();
-                        setHasTags(Array.isArray(json.rows) && json.rows.length > 0);
-                    }
-                } catch (err) {
-                    console.error("Error checking for tags:", err);
-                } finally {
-                    setCheckingTags(false);
-                }
-            } else {
-                setCheckingTags(false);
+                const tags = metadata.tags[name] || [];
+                setHasTags(tags.length > 0);
             }
+            setCheckingTags(false);
+
+            // Check for ratings in integer-type fields
+            if (["int", "bigint", "smallint", "mediumint", "tinyint"].includes(type)) {
+                setHasRating(!!metadata.ratings[name]);
+            }
+            setCheckingRating(false);
         }
 
-        checkTags();
+        checkMetadata();
     }, [table, name, type]);
 
     // Effect to track file names for blob fields
@@ -88,39 +135,6 @@ export function FieldInput({ meta, value, onChange, mode, table }) {
             setFileName("");
         }
     }, [value, type, ct]);
-
-    // Check for ratings on mount for integer-type fields
-    useEffect(() => {
-        async function checkRatings() {
-            if (["int", "bigint", "smallint", "mediumint", "tinyint"].includes(type)) {
-                try {
-                    const res = await apiRequest("query", {
-                        method: "POST",
-                        body: {
-                            table: "Ratings",
-                            columns: ["id"],
-                            filters: [
-                                { column: "table_name", operator: "=", value: table },
-                                { column: "column_name", operator: "=", value: name }
-                            ]
-                        }
-                    });
-                    if (res.ok) {
-                        const json = await res.json();
-                        setHasRating(Array.isArray(json.rows) && json.rows.length > 0);
-                    }
-                } catch (err) {
-                    console.error("Error checking for ratings:", err);
-                } finally {
-                    setCheckingRating(false);
-                }
-            } else {
-                setCheckingRating(false);
-            }
-        }
-
-        checkRatings();
-    }, [table, name, type]);
 
     // Handler when tags are saved from the modal
     const handleTagsSaved = (tagsExist) => {

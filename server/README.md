@@ -28,7 +28,6 @@ DB_HOST=localhost
 DB_USER=your_db_user
 DB_PASS=your_db_password
 DB_NAME=your_database
-DB_PORT=3306
 
 # JWT Configuration
 JWT_SECRET=your_secure_secret  # CHANGE IN PRODUCTION!

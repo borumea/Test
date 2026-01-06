@@ -114,7 +114,7 @@ async function encryptEnvFile() {
             env[key] = encrypt(env[key]);
             changed = true;
         } else if (env[key] && isEncrypted(env[key])) {
-            console.log(`✓  ${key} is already encrypted`);
+            console.log(`${key} is already encrypted`);
         }
     }
 
