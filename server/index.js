@@ -8,6 +8,10 @@ const helmet = require('helmet');
 const dbConfig = require('./Config/db.config');
 const securityConfig = require('./Config/security');
 const { generalLimiter } = require('./Middleware/rateLimiter');
+const { createLogger } = require('./Services/logger');
+
+// Initialize logger
+const logger = createLogger('server');
 
 // Import route modules
 const authRoutes = require('./Routes/auth');
@@ -49,12 +53,18 @@ app.use('/api/views', viewsRoutes);         // View management
 
 // --- 404 handler ---
 app.use((req, res) => {
+    logger.warn('404 endpoint not found', { method: req.method, path: req.path });
     res.status(404).json({ error: 'Endpoint not found' });
 });
 
 // --- Global error handler ---
 app.use((err, req, res, next) => {
-    console.error('Unhandled error:', err);
+    logger.error('Unhandled error occurred', {
+        error: err.message,
+        stack: err.stack,
+        method: req.method,
+        path: req.path
+    });
     res.status(500).json({
         error: 'Internal server error',
         message: process.env.NODE_ENV === 'development' ? err.message : undefined
@@ -75,4 +85,11 @@ app.listen(PORT, HOST, () => {
 ║  Environment: ${(process.env.NODE_ENV || 'development').padEnd(41)}║
 ╚════════════════════════════════════════════════════════╝
     `);
+
+    logger.info('API server started successfully', {
+        host: HOST,
+        port: PORT,
+        database: DB_NAME,
+        environment: process.env.NODE_ENV || 'development'
+    });
 });

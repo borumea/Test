@@ -1,34 +1,71 @@
 # Server API
 
-This document describes the Express API implemented in `server/index.js`. It lists configuration options, all endpoints (HTTP method, expected payload, and typical responses), and database configuration.
+This document describes the Express API implemented in `server/index.js`. It provides RESTful endpoints for database operations, user authentication, and schema management with comprehensive security features.
 
 ## Summary
 
-- Node + Express API backed by MySQL (mysql2/promise)
-- Optional file upload support via multer
-- Authentication / user management built around a detected "employees" table with `username` and `password` columns
-- Parameterized SQL for queries, inserts, updates, deletes
-- Provides schema metadata endpoints to drive a client UI
+- **Framework**: Node.js + Express.js 4
+- **Database**: MySQL (mysql2/promise with connection pooling)
+- **Authentication**: JWT tokens with 24-hour expiration (configurable)
+- **Security**: bcrypt hashing, rate limiting, helmet headers, CORS
+- **Logging**: Structured console logging with levels (ERROR, WARN, INFO, DEBUG)
+- **File Upload**: multer support for multipart/form-data
+- **Validation**: express-validator for input sanitization
+- **Schema Detection**: Auto-detects employees table and permissions
 
 ## Configuration
 
-1. db.config.js or environment variables
+### Environment Variables (.env file)
+Create a `.env` file in the server directory:
 
-- The server reads DB configuration from `./db.config` (JS object) or these environment variables:
-  - DB_HOST (or dbConfig.host)
-  - DB_USER (or dbConfig.user)
-  - DB_PASS (or dbConfig.password)
-  - DB_NAME (or dbConfig.database)
-  - PORT (or dbConfig.port)
+```env
+# Server Configuration
+PORT=3001                  # API server port
+HOST=0.0.0.0              # Bind address (0.0.0.0 for all interfaces)
 
-2. Listening address
+# Database Configuration
+DB_HOST=localhost
+DB_USER=your_db_user
+DB_PASS=your_db_password
+DB_NAME=your_database
+DB_PORT=3306
 
-   - Server binds to 127.0.0.1 and the configured PORT
+# JWT Configuration
+JWT_SECRET=your_secure_secret  # CHANGE IN PRODUCTION!
+JWT_EXPIRES_IN=24h             # Token lifetime (e.g., 24h, 7d)
 
-3. Optional dependencies
-   - `multer` is used if available for multipart/form-data file uploads (files stored in memory)
-   - `bcrypt` is used for password hashing
-   - `mysql2` is used for execution of MySQL queries
+# CORS Configuration
+CORS_ORIGIN=http://localhost:3000   # Frontend URL
+# CORS_ALLOW_ALL=true                # Allow all origins (dev only!)
+
+# Logging
+LOG_LEVEL=INFO            # DEBUG | INFO | WARN | ERROR
+NODE_ENV=development      # development | production
+```
+
+### Alternative: db.config.js
+Instead of environment variables, create `Config/db.config.js`:
+```javascript
+module.exports = {
+    host: 'localhost',
+    user: 'your_user',
+    password: 'your_password',
+    database: 'your_database',
+    port: 3306
+};
+```
+
+**Note**: This file is in `.gitignore` and should not be committed.
+
+### Security Configuration
+
+Located in `Config/security.js`:
+- **JWT**: Token secret, expiration, issuer, audience
+- **bcrypt**: Salt rounds (default: 10)
+- **Rate Limits**:
+  - General API: 100 requests/minute
+  - Login endpoint: 5 failed attempts/15 minutes
+- **CORS**: Origin validation with credentials support
 
 ### Authentication & user-management (employees table)
 
@@ -90,6 +127,37 @@ This document describes the Express API implemented in `server/index.js`. It lis
 
 #### Responses
 - Success: `{ "success": true }`
+
+### POST /api/auth/refresh-token
+
+#### Authentication
+- Requires valid JWT token in Authorization header
+
+#### Payload
+- None (user info extracted from JWT)
+
+#### Behavior
+- Verifies current JWT token is valid
+- Retrieves latest user data and permissions from database
+- Generates new JWT token with fresh expiration time
+- Returns new token with updated permissions
+
+#### Responses
+- Success (200):
+  ```json
+  {
+      "success": true,
+      "token": "eyJhbGc...",
+      "username": "user@example.com",
+      "permissions": { "employees": 1, "table1": 1, ... }
+  }
+  ```
+- Errors:
+  - 401/403: Invalid or expired token
+  - 404: User not found
+  - 500: Server error
+
+**Usage**: Call this endpoint before token expiration to extend user session without requiring re-login.
 
 ### GET /api/employees
 

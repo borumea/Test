@@ -23,13 +23,33 @@ export const apiRequest = async (endpoint, options = {}) => {
         headers,
     });
 
-    // Handle 401 (unauthorized) - token expired or invalid
-    if (response.status === 401) {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('username');
-        localStorage.removeItem('permissions');
-        window.location.href = '/login';
-        throw new Error('Session expired, please login again');
+    // Handle 401 (unauthorized) or 403 (forbidden) - token expired or invalid
+    if (response.status === 401 || response.status === 403) {
+        // Check if it's a token expiration error
+        const errorData = await response.json().catch(() => ({ error: 'Unauthorized' }));
+
+        if (errorData.error && (
+            errorData.error.includes('token') ||
+            errorData.error.includes('expired') ||
+            errorData.error.includes('Access token required')
+        )) {
+            // Clear all authentication data
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('username');
+            localStorage.removeItem('permissions');
+            localStorage.removeItem('app_current_user');
+            localStorage.removeItem('allowedPermissions');
+
+            // Redirect to login
+            window.location.href = '/login';
+            throw new Error('Session expired, please login again');
+        }
+
+        // If not token-related, return the response for normal handling
+        return new Response(JSON.stringify(errorData), {
+            status: response.status,
+            headers: response.headers
+        });
     }
 
     return response;

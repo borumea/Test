@@ -4,6 +4,9 @@
 const jwt = require('jsonwebtoken');
 const securityConfig = require('../Config/security');
 const { getEntityMetadata, entityExists } = require('../Services/metadata');
+const { createLogger } = require('../Services/logger');
+
+const logger = createLogger('auth');
 
 /**
  * Middleware: Verify JWT token from Authorization header
@@ -14,6 +17,7 @@ function authenticateToken(req, res, next) {
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
+        logger.warn('Authentication failed: No token provided', { path: req.path });
         return res.status(401).json({ error: 'Access token required' });
     }
 
@@ -26,9 +30,17 @@ function authenticateToken(req, res, next) {
         },
         (err, user) => {
             if (err) {
+                logger.warn('Authentication failed: Invalid or expired token', {
+                    path: req.path,
+                    error: err.message
+                });
                 return res.status(403).json({ error: 'Invalid or expired token' });
             }
 
+            logger.debug('User authenticated successfully', {
+                username: user.username,
+                path: req.path
+            });
             req.user = user;
             next();
         }
@@ -96,7 +108,10 @@ async function hasAccessToEntity(entityName, permissions = {}) {
 
         return false;
     } catch (err) {
-        console.error(`Error checking access to ${entityName}:`, err);
+        logger.error('Error checking entity access', {
+            entity: entityName,
+            error: err.message
+        });
         return false;
     }
 }
@@ -120,15 +135,28 @@ function requireTablePermission(tableParam = 'table') {
             const hasAccess = await hasAccessToEntity(table, permissions);
 
             if (!hasAccess) {
+                logger.warn('Access denied to entity', {
+                    username: req.user?.username,
+                    entity: table,
+                    path: req.path
+                });
                 return res.status(403).json({
                     error: `Access denied to table/view: ${table}`,
                     table: table
                 });
             }
 
+            logger.debug('Entity access granted', {
+                username: req.user?.username,
+                entity: table
+            });
             next();
         } catch (err) {
-            console.error('Permission check error:', err);
+            logger.error('Permission check failed', {
+                error: err.message,
+                table: table,
+                username: req.user?.username
+            });
             return res.status(500).json({ error: 'Failed to check permissions' });
         }
     };

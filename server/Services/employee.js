@@ -260,6 +260,24 @@ async function verifyAdminAccess(creator, adminPassword, employeesTable) {
 }
 
 /**
+ * Get valid permission columns from employees table
+ * Filters out special columns like username, password, first_time_login
+ */
+async function getValidPermissionColumns(employeesTable) {
+    const [columns] = await pool.query(
+        `SELECT COLUMN_NAME
+         FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
+        [DB_NAME, employeesTable]
+    );
+
+    const specialColumns = ['username', 'password', 'first_time_login', 'emp_id', 'employee_id'];
+    return columns
+        .map(c => c.COLUMN_NAME)
+        .filter(col => !specialColumns.includes(col.toLowerCase()));
+}
+
+/**
  * Create or update a user
  */
 async function createOrUpdateUser(creator, adminPassword, username, oneTimePassword, permissions) {
@@ -268,35 +286,52 @@ async function createOrUpdateUser(creator, adminPassword, username, oneTimePassw
     // Verify admin access
     await verifyAdminAccess(creator, adminPassword, employeesTable);
 
+    // Get valid permission columns that actually exist in the employees table
+    const validColumns = await getValidPermissionColumns(employeesTable);
+    const validColumnSet = new Set(validColumns.map(c => c.toLowerCase()));
+
+    // Filter permissions to only include columns that exist
+    const permCols = Object.keys(permissions || {}).filter(col =>
+        validColumnSet.has(col.toLowerCase())
+    );
+    const permVals = permCols.map(col => bitToInt(permissions[col]));
+
     // Check if user exists
     const [existing] = await pool.query(
         `SELECT * FROM \`${employeesTable}\` WHERE username = ?`,
         [username]
     );
 
-    const permCols = Object.keys(permissions || {});
-    const permVals = permCols.map(col => bitToInt(permissions[col]));
-
     if (existing.length) {
-        // Update existing user
-        const colUpdates = permCols.map(col => `\`${col}\` = ?`);
-        const sql = `UPDATE \`${employeesTable}\` SET ${colUpdates.join(', ')} WHERE username = ?`;
-        await pool.query(sql, [...permVals, username]);
-
+        // Update existing user - only update columns that exist
+        if (permCols.length > 0) {
+            const colUpdates = permCols.map(col => `\`${col}\` = ?`);
+            const sql = `UPDATE \`${employeesTable}\` SET ${colUpdates.join(', ')} WHERE username = ?`;
+            await pool.query(sql, [...permVals, username]);
+        }
     } else {
         // Create new user
         const hash = oneTimePassword
             ? await bcrypt.hash(oneTimePassword, BCRYPT_SALT_ROUNDS)
             : await bcrypt.hash('changeme', BCRYPT_SALT_ROUNDS);
 
-        const placeholders = permCols.map(() => '?').join(', ');
-        const sql = `
-            INSERT INTO \`${employeesTable}\` 
-            (username, password, first_time_login, ${permCols.join(', ')}) 
-            VALUES (?, ?, 1, ${placeholders})
-        `;
-
-        await pool.query(sql, [username, hash, ...permVals]);
+        if (permCols.length > 0) {
+            const placeholders = permCols.map(() => '?').join(', ');
+            const sql = `
+                INSERT INTO \`${employeesTable}\`
+                (username, password, first_time_login, ${permCols.map(c => `\`${c}\``).join(', ')})
+                VALUES (?, ?, 1, ${placeholders})
+            `;
+            await pool.query(sql, [username, hash, ...permVals]);
+        } else {
+            // No permission columns, just create with username and password
+            const sql = `
+                INSERT INTO \`${employeesTable}\`
+                (username, password, first_time_login)
+                VALUES (?, ?, 1)
+            `;
+            await pool.query(sql, [username, hash]);
+        }
     }
 }
 
