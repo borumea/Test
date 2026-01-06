@@ -16,6 +16,7 @@ const dashboardsConfig = [
             type: "SUM",
             column: "grand_total_value"
         },
+        filters: [],  // No filters - sum all donations
         preferredSize: {
             width: 250,
             height: 300,
@@ -38,6 +39,7 @@ const dashboardsConfig = [
             type: "SUM",
             column: "grand_total_value"
         },
+        filters: [],  // No filters - sum all donations
         preferredSize: {
             width: 250,
             height: 300,

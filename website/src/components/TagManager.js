@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { formatDateTimeLocal } from "../lib/insert/insertNormalization";
 import "../styles/TagManager.css";
-import { getStoredUser } from "../lib/auth";  
-import { apiRequest } from '../lib/api';  
+import { getStoredUser } from "../lib/auth";
+import { apiRequest } from '../lib/api';
+import { clearColumnMetadataCache } from './FieldInput';  
 
 // User-friendly color palette for auto-generated colors
 const DEFAULT_COLORS = [
@@ -168,6 +169,9 @@ export default function TagManager({
 
     const handleModalSave = async () => {
         await loadTags();
+
+        // Clear the FieldInput cache so new tags are detected
+        clearColumnMetadataCache(table);
 
         // Check if tags exist after save
         const res = await apiRequest("query", {

@@ -12,6 +12,21 @@ const columnMetadataCache = {};
 const columnMetadataPromises = {};
 
 /**
+ * Clear the metadata cache for a specific table (or all tables)
+ * Call this after creating/updating/deleting tags or ratings
+ */
+export function clearColumnMetadataCache(table = null) {
+    if (table) {
+        delete columnMetadataCache[table];
+        delete columnMetadataPromises[table];
+    } else {
+        // Clear all caches
+        Object.keys(columnMetadataCache).forEach(key => delete columnMetadataCache[key]);
+        Object.keys(columnMetadataPromises).forEach(key => delete columnMetadataPromises[key]);
+    }
+}
+
+/**
  * Fetch column metadata for a table (cached with promise deduplication)
  * Uses promise cache to ensure only 1 API call per table, even if called simultaneously
  */

@@ -472,26 +472,9 @@ export default function SearchPage() {
 
             finalOrderBy = finalOrderBy.slice(0, 3);
 
-            // Step 1: Get total count
-            const countPayload = {
-                table,
-                columns: ['COUNT(*) as total'],
-                filters: effectiveFilters,
-            };
-
-            const countRes = await apiRequest('query', {
-                method: 'POST',
-                body: countPayload
-            });
-
-            const countJson = await countRes.json();
-            if (!countRes.ok) throw new Error(countJson.error || "Failed to get count");
-
-            const total = countJson.rows?.length || 0;
-            setTotalCount(total);
-
-            // Step 2: If rowsPerPage is 0 (show all), fetch everything
+            // Step 1 & 2: Run COUNT and data query IN PARALLEL for better performance
             if (rowsPerPage === 0) {
+                // Show all mode - fetch everything
                 const allPayload = {
                     table,
                     columns: columns,
@@ -510,14 +493,20 @@ export default function SearchPage() {
                 let rows = allJson.rows || [];
                 setResults(rows);
                 setChunkedResults(rows);
+                setTotalCount(rows.length);
                 return;
             }
 
-            // Step 3: Calculate chunk size (10 pages worth of data)
+            // Paginated mode - run COUNT and first chunk fetch in parallel
             const effectiveChunkSize = rowsPerPage * 10;
             setChunkSize(effectiveChunkSize);
 
-            // Step 4: Fetch first chunk with primary keys included
+            const countPayload = {
+                table,
+                columns: ['COUNT(*) as total'],
+                filters: effectiveFilters,
+            };
+
             const chunkPayload = {
                 table,
                 columns: columns,
@@ -525,21 +514,29 @@ export default function SearchPage() {
                 orderBy: finalOrderBy,
                 limit: effectiveChunkSize,
                 offset: 0,
-                includePrimaryKeys: true // Request primary key metadata
+                includePrimaryKeys: true
             };
 
-            const res = await apiRequest('query', {
-                method: 'POST',
-                body: chunkPayload
-            });
+            // Run both queries in parallel - significantly faster!
+            const [countRes, dataRes] = await Promise.all([
+                apiRequest('query', { method: 'POST', body: countPayload }),
+                apiRequest('query', { method: 'POST', body: chunkPayload })
+            ]);
 
+            // Process count result
+            const countJson = await countRes.json();
+            if (!countRes.ok) throw new Error(countJson.error || "Failed to get count");
+            const total = countJson.rows?.[0]?.total || 0;
+            setTotalCount(total);
+
+            // Process data result
             let json;
             try {
-                json = await res.json();
+                json = await dataRes.json();
             } catch (err) {
                 throw new Error("Invalid JSON response from the server");
             }
-            if (!res.ok) throw new Error(json.error || json.message || "Search failed");
+            if (!dataRes.ok) throw new Error(json.error || json.message || "Search failed");
 
             console.log(json)
 
