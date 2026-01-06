@@ -6,12 +6,12 @@ This document describes the Express API implemented in `server/index.js`. It pro
 
 - **Framework**: Node.js + Express.js 4
 - **Database**: MySQL (mysql2/promise with connection pooling)
-- **Authentication**: JWT tokens with 24-hour expiration (configurable)
+- **Authentication**: JWT tokens with 24 hour expiration (configurable)
 - **Security**: bcrypt hashing, rate limiting, helmet headers, CORS
 - **Logging**: Structured console logging with levels (ERROR, WARN, INFO, DEBUG)
 - **File Upload**: multer support for multipart/form-data
-- **Validation**: express-validator for input sanitization
-- **Schema Detection**: Auto-detects employees table and permissions
+- **Validation**: express validator for input sanitization
+- **Schema Detection**: Automatically detects employees table and permissions
 
 ## Configuration
 
@@ -51,29 +51,29 @@ module.exports = {
     user: 'your_user',
     password: 'your_password',
     database: 'your_database',
-    port: 3306
+    port: 3001
 };
 ```
 
-**Note**: This file is in `.gitignore` and should not be committed.
+**Note**: These files are in `.gitignore` and should not be committed.
 
 ### Security Configuration
 
 Located in `Config/security.js`:
 - **JWT**: Token secret, expiration, issuer, audience
-- **bcrypt**: Salt rounds (default: 10)
+- **bcrypt**: Salt rounds (currently 10)
 - **Rate Limits**:
   - General API: 100 requests/minute
   - Login endpoint: 5 failed attempts/15 minutes
 - **CORS**: Origin validation with credentials support
 
-### Authentication & user-management (employees table)
+### Authentication & user management (employees table)
 
 - The server attempts to detect an "employees" table by scanning INFORMATION_SCHEMA for a table with both `username` and `password` columns. Falls back to common names such as "Employees".
 
 - Password handling
-  - Supports bcrypt hashed passwords and legacy plaintext passwords
-  - On successful login with a plaintext password, the server re-hashes the password using bcrypt with `BCRYPT_SALT_ROUNDS = 10` and updates the DB
+  - Supports bcrypt hashed passwords and old plaintext passwords
+  - On successful login with a plaintext password, the server hashes the password using bcrypt and updates the DB
 
 ## Endpoints
 
@@ -157,7 +157,7 @@ Located in `Config/security.js`:
   - 404: User not found
   - 500: Server error
 
-**Usage**: Call this endpoint before token expiration to extend user session without requiring re-login.
+**Usage**: Call this endpoint before token expiration to extend user session without requiring a new login.
 
 ### GET /api/employees
 
@@ -171,7 +171,7 @@ Located in `Config/security.js`:
 
 ```
 [ 
-    { username: "jdoe", emp_id: 1, employees: 1, ... }, 
+    { username: "jdoe@techfortroops.org", emp_id: 1, employees: 1, ... }, 
     ... 
 ]
 ```
@@ -260,7 +260,7 @@ Located in `Config/security.js`:
 
 #### Query
   - table (required)
-  - value (or legacy `pk`) (required)
+  - value (or potentially `pk`) (required)
   - key (optional) column to search by. If omitted, server uses primary key/id/first column.
 
 #### Response 
@@ -329,7 +329,7 @@ Located in `Config/security.js`:
 #### Behavior:
 - Validates table
 - Loads table column metadata
-- Skips auto-increment and server-managed `last_modified` (which will be set to CURRENT_TIMESTAMP())
+- Skips auto-increment and server-managed `Last Modified` (which will be set to CURRENT_TIMESTAMP())
 - Converts empty strings to NULL for nullable columns (also treats "null" as null)
 - Performs parameterized INSERT
 
@@ -355,7 +355,7 @@ Located in `Config/security.js`:
 #### Behavior
   - Determines pkColumn if not provided (primary / id / first column)
   - Will not update primary key
-  - Sets `last_modified` = CURRENT_TIMESTAMP() if present in schema
+  - Sets `Last Modified` = CURRENT_TIMESTAMP() if present in schema
   - Converts empty strings to NULL for nullable columns
   - Executes parameterized UPDATE WHERE pkColumn = pkValue
 

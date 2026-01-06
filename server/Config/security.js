@@ -4,7 +4,7 @@
 module.exports = {
     jwt: {
         secret: process.env.JWT_SECRET || 'CHANGE_THIS_SECRET_IN_PRODUCTION',
-        expiresIn: process.env.JWT_EXPIRES_IN || '24h', // Changed from 5s to 24h for proper session management
+        expiresIn: process.env.JWT_EXPIRES_IN || '24h', // 24 hours
         issuer: 'SQL Interactinator',
         audience: 'web',
     },
@@ -20,7 +20,7 @@ module.exports = {
 
     rateLimitAuth: {
         windowMs: 15 * 60 * 1000, // 15 minutes
-        maxRequests: 5, // prevents brute force attacks on login
+        maxRequests: 5, // Prevents brute force attacks on login
     },
 
     cors: {

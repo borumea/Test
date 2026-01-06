@@ -1,16 +1,16 @@
 # SQL Migration Project
 
 ## Overview
-This repository is a full-stack web application for managing MySQL database operations with a React frontend and Node.js Express backend. The application provides a user-friendly interface for querying, inserting, updating, and deleting records with role-based access control.
+This repository is a full-stack web application for managing MySQL database operations with a React frontend and Node.js Express backend. The application provides an interface for querying, inserting, updating, and deleting records with individualized access control.
 
 **Key Features:**
 - User authentication with JWT tokens (24-hour session)
-- Role-based permissions for tables and views
+- Individualized permissions for tables and views
 - Dynamic query builder with filters and aggregations
 - Support for multi-table views
 - Rate limiting for security
 - Structured logging system
-- Auto-detection of database schema
+- Automatic detection of database schema
 
 **Security Notice:** Do not commit credentials. DB connection values should be configured in `./server/.env` or `./server/db.config.js`.
 
@@ -19,14 +19,14 @@ For contributors: follow the quickstart steps to run locally, open a PR against 
 ## Tech Stack
 - **Frontend**: React 18, react-router-dom 6, fetch API, CSS
 - **Backend**: Node.js, Express.js 4, JWT authentication
-- **Database**: MySQL (mysql2), supports NDB clusters
+- **Database**: MySQL (mysql2), currently using NDB clusters
 - **Security**: bcrypt password hashing, express-rate-limit, helmet, CORS
 - **Dev Tools**: npm, Prettier, DBeaver-ce for database access
 - **Deployment**: Apache2 (production), Development servers (local)
 
 ## Architecture
 ```
-Test/
+SQL-Migration-Site/
 ├── server/         # Express API backend
 │   ├── Config/     # Security, database config
 │   ├── Middleware/ # Auth, rate limiting, validation
@@ -45,13 +45,12 @@ Test/
 1. **Clone repository:**
    ```bash
    git clone <repository-url>
-   cd Test
+   cd SQL-Migration-Site
    ```
 
 2. **Configure server environment:**
    ```bash
    cd server
-   cp .env.example .env
    # Edit .env with your database credentials and settings
    ```
 
@@ -88,7 +87,7 @@ Test/
 ## Configuration
 
 ### Server Environment Variables
-Create a `.env` file in the `server/` directory based on `.env.example`:
+Create a `.env` file in the `server/` directory based on the following example:
 
 ```env
 # Server Configuration
@@ -161,7 +160,7 @@ Set log level via `LOG_LEVEL` environment variable.
 
 2. **Deploy to Apache2:**
    ```bash
-   sudo cp -r build/* /var/www/your-domain/
+   sudo cp -r build /var/www/test_domain.org
    ```
 
 3. **Run API server:**
@@ -173,10 +172,9 @@ Set log level via `LOG_LEVEL` environment variable.
 
 ### Production Considerations
 - Set `NODE_ENV=production`
-- Use strong `JWT_SECRET`
+- Use better `JWT_SECRET`
 - Configure appropriate `CORS_ORIGIN`
 - Enable HTTPS/TLS
-- Set up reverse proxy (nginx/Apache) for API
 - Consider using PM2 or systemd for server process management
 - Regular database backups
 
@@ -213,9 +211,9 @@ Set log level via `LOG_LEVEL` environment variable.
 - Clear browser cache and re-login if issues persist
 
 **Cannot create/update users:**
-- Ensure logged-in user has `employees` permission
+- Ensure logged in user has `employees` permission
 - Check that permission columns exist in employees table
-- Single-table views don't need permission columns
+- Single table views don't need permission columns
 
 **Rate limit errors:**
 - Wait 15 minutes after failed login attempts
@@ -223,6 +221,3 @@ Set log level via `LOG_LEVEL` environment variable.
 
 ## API Documentation
 See `server/README.md` for complete API endpoint documentation.
-
-## License
-To be added upon public release.
