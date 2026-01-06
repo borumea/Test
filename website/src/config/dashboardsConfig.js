@@ -26,7 +26,7 @@ const dashboardsConfig = [
         minWidth: 120,           // Minimum 250px wide
         minHeight: 100,          // Minimum 300px tall
         aspectRatio: 5/6,        // 5:6 aspect ratio
-        lockAspectRatio: true,   // Enforce aspect ratio during resize
+        lockAspectRatio: false,   // Enforce aspect ratio during resize
     },
     {
         id: "donations_total_value_2",
@@ -51,7 +51,7 @@ const dashboardsConfig = [
         minWidth: 120,           // Minimum 250px wide
         minHeight: 100,          // Minimum 300px tall
         aspectRatio: 5/6,        // 5:6 aspect ratio
-        lockAspectRatio: true,   // Enforce aspect ratio during resize
+        lockAspectRatio: false,   // Enforce aspect ratio during resize
     },
     {
         id: "inventory_pie_chart",

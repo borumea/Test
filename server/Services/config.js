@@ -93,7 +93,7 @@ function loadDbConfig() {
             user: process.env.DB_USER,
             password: process.env.DB_PASS || process.env.DB_PASSWORD,
             database: process.env.DB_NAME,
-            port: parseInt(process.env.DB_PORT || '3306', 10)
+            port: parseInt(process.env.PORT || '4000', 10)
         };
 
         logger.info('Database configuration loaded from .env file');
@@ -126,7 +126,7 @@ function loadDbConfig() {
         user: process.env.DB_USER,
         password: process.env.DB_PASS || process.env.DB_PASSWORD,
         database: process.env.DB_NAME,
-        port: parseInt(process.env.DB_PORT || '3306', 10)
+        port: parseInt(process.env.PORT || '4000', 10)
     };
 
     logger.warn('Database configuration loaded from environment variables (incomplete)');
