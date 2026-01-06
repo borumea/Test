@@ -24,22 +24,12 @@ module.exports = {
     },
 
     cors: {
-        // Allow multiple origins: localhost and environment-specified origin
-        origin: function (origin, callback) {
-            const allowedOrigins = [
-                'http://localhost:3000',
-                process.env.CORS_ORIGIN
-            ].filter(Boolean); // Remove undefined values
-
-            // Allow requests with no origin (like mobile apps or curl requests)
-            if (!origin) return callback(null, true);
-
-            if (allowedOrigins.indexOf(origin) !== -1 || process.env.CORS_ALLOW_ALL === 'true') {
-                callback(null, true);
-            } else {
-                callback(new Error('Not allowed by CORS'));
-            }
-        },
+        // CORS origin configuration
+        // In development: allows localhost:3000 or custom CORS_ORIGIN
+        // Use CORS_ALLOW_ALL=true to allow all origins (development only!)
+        origin: process.env.CORS_ALLOW_ALL === 'true'
+            ? true  // Allow all origins
+            : (process.env.CORS_ORIGIN || 'http://localhost:3000'), // Specific origin(s)
         credentials: true,
     },
 };
