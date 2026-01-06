@@ -12,12 +12,9 @@ const dashboardsConfig = [
         ],
         chartType: "metric",
         table: "Donations",
-        columns: [
-            "grand_total_value"
-        ],
-        groupBy: "grand_total_value",
         aggregate: {
-            type: "SUM", column: "grand_total_value"
+            type: "SUM",
+            column: "grand_total_value"
         },
         preferredSize: {
             width: 250,
@@ -37,12 +34,9 @@ const dashboardsConfig = [
         ],
         chartType: "metric",
         table: "Donations",
-        columns: [
-            "grand_total_value"
-        ],
-        groupBy: "grand_total_value",
         aggregate: {
-            type: "SUM", column: "grand_total_value"
+            type: "SUM",
+            column: "grand_total_value"
         },
         preferredSize: {
             width: 250,

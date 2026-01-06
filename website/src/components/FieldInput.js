@@ -7,28 +7,46 @@ import { apiRequest } from "../lib/api.js";
 import "../styles/TagManager.css";
 
 // Module-level cache for column metadata to avoid redundant API calls
+// Cache both the data AND in-flight promises to prevent race conditions
 const columnMetadataCache = {};
+const columnMetadataPromises = {};
 
 /**
- * Fetch column metadata for a table (cached)
+ * Fetch column metadata for a table (cached with promise deduplication)
+ * Uses promise cache to ensure only 1 API call per table, even if called simultaneously
  */
 async function getColumnMetadata(table) {
+    // Return cached data if available
     if (columnMetadataCache[table]) {
         return columnMetadataCache[table];
     }
 
-    try {
-        const res = await apiRequest(`column-metadata?table=${encodeURIComponent(table)}`);
-        if (res.ok) {
-            const metadata = await res.json();
-            columnMetadataCache[table] = metadata;
-            return metadata;
-        }
-    } catch (err) {
-        console.error('Failed to fetch column metadata:', err);
+    // Return in-flight promise if one exists (prevents duplicate requests)
+    if (columnMetadataPromises[table]) {
+        return columnMetadataPromises[table];
     }
 
-    return { tags: {}, ratings: {} };
+    // Create and cache the promise
+    const promise = (async () => {
+        try {
+            const res = await apiRequest(`column-metadata?table=${encodeURIComponent(table)}`);
+            if (res.ok) {
+                const metadata = await res.json();
+                columnMetadataCache[table] = metadata;
+                return metadata;
+            }
+        } catch (err) {
+            console.error('Failed to fetch column metadata:', err);
+        } finally {
+            // Clear the promise from cache after completion
+            delete columnMetadataPromises[table];
+        }
+
+        return { tags: {}, ratings: {} };
+    })();
+
+    columnMetadataPromises[table] = promise;
+    return promise;
 }
 
 /**
