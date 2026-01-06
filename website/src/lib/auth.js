@@ -26,6 +26,9 @@ export function storeUser(user) {
 
 export function clearStoredUser() {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('username');
+    localStorage.removeItem('permissions');
 }
 
 export async function login(username, password) {
@@ -67,7 +70,7 @@ export async function changePassword(username, newPassword) {
         const err = await res.json().catch(() => ({ error: res.statusText }));
         throw new Error(err.error || 'Change password failed');
     }
-    // update stored user first_time_login -> 0
+    // update stored user first_time_login
     const user = getStoredUser();
     if (user && user.username === username) {
         user.first_time_login = 0;
@@ -97,9 +100,6 @@ export async function createUser(creatorUsername, username, oneTimePassword, opt
 // Logout function
 export const logout = () => {
     clearStoredUser();
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('username');
-    localStorage.removeItem('permissions');
     window.location.href = '/login';
 };
 

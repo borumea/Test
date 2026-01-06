@@ -17,14 +17,22 @@ function authenticateToken(req, res, next) {
         return res.status(401).json({ error: 'Access token required' });
     }
 
-    jwt.verify(token, securityConfig.jwt.secret, (err, user) => {
-        if (err) {
-            return res.status(403).json({ error: 'Invalid or expired token' });
-        }
+    jwt.verify(
+        token,
+        securityConfig.jwt.secret,
+        {
+            issuer: securityConfig.jwt.issuer,
+            audience: securityConfig.jwt.audience,
+        },
+        (err, user) => {
+            if (err) {
+                return res.status(403).json({ error: 'Invalid or expired token' });
+            }
 
-        req.user = user; // { username, permissions, iat, exp }
-        next();
-    });
+            req.user = user;
+            next();
+        }
+    );
 }
 
 /**
@@ -94,7 +102,7 @@ async function hasAccessToEntity(entityName, permissions = {}) {
 }
 
 /**
- * Middleware factory: Check if user has permission for a specific table/view
+ * Middleware: Check if user has permission for a specific table/view
  * @param {string} tableParam - name of req.body or req.query property containing table name
  */
 function requireTablePermission(tableParam = 'table') {
@@ -107,7 +115,7 @@ function requireTablePermission(tableParam = 'table') {
 
         const permissions = req.user?.permissions || {};
 
-        // Check access using the new logic
+        // Check access
         try {
             const hasAccess = await hasAccessToEntity(table, permissions);
 

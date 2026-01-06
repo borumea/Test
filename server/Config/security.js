@@ -4,8 +4,9 @@
 module.exports = {
     jwt: {
         secret: process.env.JWT_SECRET || 'CHANGE_THIS_SECRET_IN_PRODUCTION',
-        expiresIn: '24h',
+        expiresIn: '5s',
         issuer: 'SQL Interactinator',
+        audience: 'web',
     },
 
     bcrypt: {

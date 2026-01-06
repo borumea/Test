@@ -143,7 +143,7 @@ router.get('/record', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: `Unknown table: ${table}` });
         }
 
-        // Check permission using new logic
+        // Check permissions
         const permissions = req.user?.permissions || {};
         const hasAccess = await hasAccessToEntity(table, permissions);
 

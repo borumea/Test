@@ -35,6 +35,7 @@ router.post('/login', authLimiter, validateLogin, async (req, res) => {
             {
                 expiresIn: securityConfig.jwt.expiresIn,
                 issuer: securityConfig.jwt.issuer,
+                audience: securityConfig.jwt.audience,
             }
         );
 

@@ -134,7 +134,7 @@ export default function SearchPage() {
     // Load permissions from localStorage
     useEffect(() => {
         try {
-            // Try loading object format first (new system)
+            // Try loading object format first
             const permissionsObj = JSON.parse(localStorage.getItem("permissions") || "{}");
             if (permissionsObj && typeof permissionsObj === 'object' && Object.keys(permissionsObj).length > 0) {
                 setAllowedPermissions(permissionsObj);

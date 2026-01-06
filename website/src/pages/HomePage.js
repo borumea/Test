@@ -105,7 +105,7 @@ export default function HomePage() {
      */
     useEffect(() => {
         try {
-            // Try loading object format first (new system)
+            // Try loading object format first
             const permissionsObj = JSON.parse(localStorage.getItem("permissions") || "{}");
             if (permissionsObj && typeof permissionsObj === 'object' && Object.keys(permissionsObj).length > 0) {
                 setAllowedPermissions(permissionsObj);
@@ -143,7 +143,7 @@ export default function HomePage() {
     }, []);
 
     /**
-     * Fetch DB tables (filter by allowedPermissions using new permission system)
+     * Fetch DB tables (filter by allowedPermissions)
      */
     useEffect(() => {
         async function loadTables() {
@@ -152,7 +152,7 @@ export default function HomePage() {
                 if (!res.ok) throw new Error("tables fetch failed");
                 const tables = await res.json();
 
-                // Filter tables using new permission system
+                // Filter tables
                 const filtered = Array.isArray(tables)
                     ? tables.filter((t) => hasAccessToEntity(t, allowedPermissions, viewBaseTableMap))
                     : [];
