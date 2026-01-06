@@ -69,10 +69,10 @@ app.listen(PORT, HOST, () => {
 ╔════════════════════════════════════════════════════════╗
 ║     API Server Running                                 ║
 ║  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━    ║
-║  Address: http://${HOST}:${PORT.toString().padEnd(32)}║
-║  Database: ${DB_USER}@${DB_HOST}/${DB_NAME.padEnd(28)}║
+║  Address: http://${HOST}:${PORT.toString().padEnd(30)}║
+║  Database: ${DB_USER}@${DB_HOST}/${DB_NAME.padEnd(27)}║
 ║  Security: Rate limiting + JWT auth enabled            ║
-║  Environment: ${(process.env.NODE_ENV || 'development').padEnd(36)}║
+║  Environment: ${(process.env.NODE_ENV || 'development').padEnd(41)}║
 ╚════════════════════════════════════════════════════════╝
     `);
 });
