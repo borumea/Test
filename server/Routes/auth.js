@@ -100,6 +100,49 @@ router.post('/keep-current-password', authenticateToken, async (req, res) => {
 });
 
 /**
+ * POST /api/auth/refresh-token
+ * Refresh JWT token with a new expiration time
+ * Requires valid existing token
+ */
+router.post('/refresh-token', authenticateToken, async (req, res) => {
+    try {
+        const { username } = req.user;
+
+        // Get current user data to ensure user still exists
+        const user = await employeeService.getUserByUsername(username);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Generate new JWT token with fresh expiration
+        const newToken = jwt.sign(
+            {
+                username: user.username,
+                permissions: user.permissions
+            },
+            securityConfig.jwt.secret,
+            {
+                expiresIn: securityConfig.jwt.expiresIn,
+                issuer: securityConfig.jwt.issuer,
+                audience: securityConfig.jwt.audience,
+            }
+        );
+
+        return res.json({
+            success: true,
+            token: newToken,
+            username: user.username,
+            permissions: user.permissions,
+        });
+
+    } catch (err) {
+        console.error('Refresh token error:', err);
+        return res.status(500).json({ error: 'Failed to refresh token' });
+    }
+});
+
+/**
  * POST /api/auth/refresh-permissions
  * Get updated permissions for a user
  */

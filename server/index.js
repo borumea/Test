@@ -62,12 +62,14 @@ app.use((err, req, res, next) => {
 });
 
 // --- Start server ---
-app.listen(PORT, '127.0.0.1', () => {
+// Bind to 0.0.0.0 to accept connections from other machines
+const HOST = process.env.HOST || '0.0.0.0';
+app.listen(PORT, HOST, () => {
     console.log(`
 ╔════════════════════════════════════════════════════════╗
 ║     API Server Running                                 ║
 ║  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━    ║
-║  Address: http://127.0.0.1:${PORT.toString().padEnd(28)}║
+║  Address: http://${HOST}:${PORT.toString().padEnd(32)}║
 ║  Database: ${DB_USER}@${DB_HOST}/${DB_NAME.padEnd(28)}║
 ║  Security: Rate limiting + JWT auth enabled            ║
 ║  Environment: ${(process.env.NODE_ENV || 'development').padEnd(36)}║

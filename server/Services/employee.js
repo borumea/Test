@@ -100,6 +100,31 @@ async function upgradePasswordIfNeeded(username, plainPassword, storedPassword, 
 }
 
 /**
+ * Get user by username (without password verification)
+ * Returns user object with username, first_time_login, and permissions
+ */
+async function getUserByUsername(username) {
+    const employeesTable = await detectEmployeesTable();
+
+    const [rows] = await pool.query(
+        `SELECT * FROM \`${employeesTable}\` WHERE username = ? LIMIT 1`,
+        [username]
+    );
+
+    if (!rows || !rows.length) {
+        return null;
+    }
+
+    const userRow = rows[0];
+
+    return {
+        username,
+        first_time_login: bitToInt(userRow.first_time_login),
+        permissions: buildPermissions(userRow),
+    };
+}
+
+/**
  * Refresh user permissions from database
  */
 async function refreshUserPermissions(username) {
@@ -307,6 +332,7 @@ async function deleteUser(creator, adminPassword, username) {
 
 module.exports = {
     detectEmployeesTable,
+    getUserByUsername,
     refreshUserPermissions,
     authenticateUser,
     changeUserPassword,

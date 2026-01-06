@@ -108,6 +108,45 @@ export const isAuthenticated = () => {
     return !!localStorage.getItem('authToken');
 };
 
+// Refresh JWT token
+export async function refreshToken() {
+    const token = getAuthToken();
+    if (!token) {
+        throw new Error('No token to refresh');
+    }
+
+    const res = await fetch(`/api/auth/refresh-token`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+    });
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error(err.error || 'Token refresh failed');
+    }
+
+    const data = await res.json();
+
+    // Update stored token and user data
+    if (data.success && data.token) {
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('username', data.username);
+        localStorage.setItem('permissions', JSON.stringify(data.permissions));
+
+        // Update user object as well
+        const user = getStoredUser();
+        if (user) {
+            user.permissions = data.permissions;
+            storeUser(user);
+        }
+    }
+
+    return data;
+}
+
 // --- Forgot / Reset password helper functions ---
 export async function forgotPassword(username) {
     const res = await fetch(`/api/auth/forgot-password`, {
