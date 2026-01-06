@@ -5,6 +5,10 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 
+// Load encrypted configuration first
+const { loadEnv } = require('./Services/config');
+loadEnv(); // Load and decrypt .env file
+
 const dbConfig = require('./Config/db.config');
 const securityConfig = require('./Config/security');
 const { generalLimiter } = require('./Middleware/rateLimiter');

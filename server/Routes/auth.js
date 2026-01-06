@@ -10,6 +10,9 @@ const securityConfig = require('../Config/security');
 const { authenticateToken, requireEmployeesPermission } = require('../Middleware/auth');
 const { authLimiter } = require('../Middleware/rateLimiter');
 const { validateLogin, validateChangePassword } = require('../Middleware/validation');
+const { createLogger } = require('../Services/logger');
+
+const logger = createLogger('auth-routes');
 
 /**
  * POST /api/auth/login
@@ -19,9 +22,12 @@ router.post('/login', authLimiter, validateLogin, async (req, res) => {
     try {
         const { username, password } = req.body;
 
+        logger.info('Login request received', { username });
+
         const user = await employeeService.authenticateUser(username, password);
 
         if (!user) {
+            logger.warn('Login failed: Invalid credentials', { username });
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
@@ -39,6 +45,12 @@ router.post('/login', authLimiter, validateLogin, async (req, res) => {
             }
         );
 
+        logger.info('Login successful, JWT generated', {
+            username: user.username,
+            firstTimeLogin: user.first_time_login,
+            tokenExpiry: securityConfig.jwt.expiresIn
+        });
+
         return res.json({
             success: true,
             token,
@@ -48,7 +60,10 @@ router.post('/login', authLimiter, validateLogin, async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Login error:', err);
+        logger.error('Login error occurred', {
+            error: err.message,
+            stack: err.stack
+        });
         return res.status(500).json({ error: 'Login failed' });
     }
 });
@@ -108,10 +123,13 @@ router.post('/refresh-token', authenticateToken, async (req, res) => {
     try {
         const { username } = req.user;
 
+        logger.info('Token refresh requested', { username });
+
         // Get current user data to ensure user still exists
         const user = await employeeService.getUserByUsername(username);
 
         if (!user) {
+            logger.warn('Token refresh failed: User not found', { username });
             return res.status(404).json({ error: 'User not found' });
         }
 
@@ -129,6 +147,11 @@ router.post('/refresh-token', authenticateToken, async (req, res) => {
             }
         );
 
+        logger.info('Token refreshed successfully', {
+            username,
+            tokenExpiry: securityConfig.jwt.expiresIn
+        });
+
         return res.json({
             success: true,
             token: newToken,
@@ -137,7 +160,10 @@ router.post('/refresh-token', authenticateToken, async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Refresh token error:', err);
+        logger.error('Token refresh error', {
+            error: err.message,
+            username: req.user?.username
+        });
         return res.status(500).json({ error: 'Failed to refresh token' });
     }
 });

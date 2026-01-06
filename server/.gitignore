@@ -74,6 +74,11 @@ web_modules/
 .env.*
 !.env.example
 
+# Encryption files (DO NOT COMMIT)
+.encryption.key
+.env.backup
+.env.encrypted
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache

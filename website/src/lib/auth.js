@@ -3,7 +3,9 @@
 // Stores currentUser in localStorage under 'app_current_user'
 
 import { apiRequest } from './api';
+import { createLogger } from './logger';
 
+const logger = createLogger('auth');
 const STORAGE_KEY = 'app_current_user';
 
 export function getStoredUser() {
@@ -32,32 +34,55 @@ export function clearStoredUser() {
 }
 
 export async function login(username, password) {
-    const res = await fetch(`/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-    });
-    if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: res.statusText }));
-        throw new Error(err.error || 'Login failed');
-    }
-    const data = await res.json();
+    logger.info('Login attempt', { username });
 
-    // Store the JWT token
-    if (data.success) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('username', data.username);
-        localStorage.setItem('permissions', JSON.stringify(data.permissions));
-    }
+    try {
+        const res = await fetch(`/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+        });
 
-    // Store user info (username, permissions, first_time_login)
-    const user = {
-        username: data.username,
-        permissions: data.permissions || {},
-        first_time_login: data.first_time_login || 0,
-    };
-    storeUser(user);
-    return user;
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: res.statusText }));
+            logger.warn('Login failed', {
+                username,
+                status: res.status,
+                error: err.error
+            });
+            throw new Error(err.error || 'Login failed');
+        }
+
+        const data = await res.json();
+
+        // Store the JWT token
+        if (data.success) {
+            localStorage.setItem('authToken', data.token);
+            localStorage.setItem('username', data.username);
+            localStorage.setItem('permissions', JSON.stringify(data.permissions));
+
+            logger.info('Login successful', {
+                username: data.username,
+                firstTimeLogin: data.first_time_login,
+                permissionCount: Object.keys(data.permissions || {}).length
+            });
+        }
+
+        // Store user info (username, permissions, first_time_login)
+        const user = {
+            username: data.username,
+            permissions: data.permissions || {},
+            first_time_login: data.first_time_login || 0,
+        };
+        storeUser(user);
+        return user;
+    } catch (error) {
+        logger.error('Login error', {
+            username,
+            error: error.message
+        });
+        throw error;
+    }
 }
 
 export async function changePassword(username, newPassword) {
@@ -99,6 +124,8 @@ export async function createUser(creatorUsername, username, oneTimePassword, opt
 
 // Logout function
 export const logout = () => {
+    const username = localStorage.getItem('username');
+    logger.info('User logout', { username });
     clearStoredUser();
     window.location.href = '/login';
 };
@@ -112,39 +139,55 @@ export const isAuthenticated = () => {
 export async function refreshToken() {
     const token = getAuthToken();
     if (!token) {
+        logger.error('Refresh token failed: No token available');
         throw new Error('No token to refresh');
     }
 
-    const res = await fetch(`/api/auth/refresh-token`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-    });
+    logger.info('Refreshing JWT token');
 
-    if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: res.statusText }));
-        throw new Error(err.error || 'Token refresh failed');
-    }
+    try {
+        const res = await fetch(`/api/auth/refresh-token`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+        });
 
-    const data = await res.json();
-
-    // Update stored token and user data
-    if (data.success && data.token) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('username', data.username);
-        localStorage.setItem('permissions', JSON.stringify(data.permissions));
-
-        // Update user object as well
-        const user = getStoredUser();
-        if (user) {
-            user.permissions = data.permissions;
-            storeUser(user);
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: res.statusText }));
+            logger.error('Token refresh failed', {
+                status: res.status,
+                error: err.error
+            });
+            throw new Error(err.error || 'Token refresh failed');
         }
-    }
 
-    return data;
+        const data = await res.json();
+
+        // Update stored token and user data
+        if (data.success && data.token) {
+            localStorage.setItem('authToken', data.token);
+            localStorage.setItem('username', data.username);
+            localStorage.setItem('permissions', JSON.stringify(data.permissions));
+
+            // Update user object as well
+            const user = getStoredUser();
+            if (user) {
+                user.permissions = data.permissions;
+                storeUser(user);
+            }
+
+            logger.info('Token refreshed successfully', {
+                username: data.username
+            });
+        }
+
+        return data;
+    } catch (error) {
+        logger.error('Token refresh error', { error: error.message });
+        throw error;
+    }
 }
 
 // --- Forgot / Reset password helper functions ---
