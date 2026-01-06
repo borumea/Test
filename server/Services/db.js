@@ -2,13 +2,16 @@
 // Database connection pool and metadata caching service
 
 const mysql = require('mysql2/promise');
-const dbConfig = require('../Config/db.config');
+const { loadDbConfig } = require('./config');
+
+// Load and decrypt database configuration (.env first, then db.config.js)
+const dbConfig = loadDbConfig();
 
 // --- Database configuration ---
-const DB_HOST = dbConfig.host || process.env.DB_HOST;
-const DB_USER = dbConfig.user || process.env.DB_USER;
-const DB_PASS = dbConfig.password || process.env.DB_PASS;
-const DB_NAME = dbConfig.database || process.env.DB_NAME;
+const DB_HOST = dbConfig.host;
+const DB_USER = dbConfig.user;
+const DB_PASS = dbConfig.password;
+const DB_NAME = dbConfig.database;
 
 // Create connection pool
 const pool = mysql.createPool({
