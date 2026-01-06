@@ -15,7 +15,7 @@ module.exports = {
 
     rateLimit: {
         windowMs: 1 * 60 * 1000, // 1 minute
-        maxRequests: 100, // Seems like a reasonable limit for general API requests
+        maxRequests: 200, // Increased from 100 after optimizing metadata queries
     },
 
     rateLimitAuth: {

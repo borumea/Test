@@ -284,68 +284,46 @@ export default function SearchPage() {
                         usedRowsPerPage = savedState.rowsPerPage;
                     }
 
-                    // Check for tags
+                    // Load tags and ratings metadata in one batch request
                     setLoadingTagColumns(true);
-                    const tagCheckPromises = availableNames.map(async (colName) => {
-                        const res = await apiRequest('query', {
-                            method: 'POST',
-                            body: {
-                                table: "Tags",
-                                columns: ["id"],
-                                filters: [
-                                    { column: "table_name", operator: "=", value: table },
-                                    { column: "column_name", operator: "=", value: colName }
-                                ]
-                            }
-                        });
-
-                        if (res.ok) {
-                            const json = await res.json();
-                            return Array.isArray(json.rows) && json.rows.length > 0 ? colName : null;
-                        }
-                        return null;
-                    });
-
-                    const tagColumnResults = await Promise.all(tagCheckPromises);
-                    setTagColumns(new Set(tagColumnResults.filter(Boolean)));
-                    setLoadingTagColumns(false);
-
-                    // Check for ratings
                     setLoadingRatingColumns(true);
-                    const ratingCheckPromises = availableNames.map(async (colName) => {
-                        const colType = cols.find(c => c.name === colName)?.type?.toLowerCase();
-                        if (!["int", "bigint", "smallint", "mediumint", "tinyint"].includes(colType)) {
-                            return null;
-                        }
 
-                        const res = await apiRequest('query', {
-                            method: 'POST',
-                            body: {
-                                table: "Ratings",
-                                columns: ["id", "shape", "max_value"],
-                                filters: [
-                                    { column: "table_name", operator: "=", value: table },
-                                    { column: "column_name", operator: "=", value: colName }
-                                ]
-                            }
-                        });
+                    try {
+                        const res = await apiRequest(`column-metadata?table=${encodeURIComponent(table)}`);
 
                         if (res.ok) {
-                            const json = await res.json();
-                            if (Array.isArray(json.rows) && json.rows.length > 0) {
-                                return { colName, config: json.rows[0] };
-                            }
-                        }
-                        return null;
-                    });
+                            const metadata = await res.json();
 
-                    const ratingColumnResults = await Promise.all(ratingCheckPromises);
-                    const ratingsMap = new Map();
-                    ratingColumnResults.filter(Boolean).forEach(({ colName, config }) => {
-                        ratingsMap.set(colName, config);
-                    });
-                    setRatingColumns(ratingsMap);
-                    setLoadingRatingColumns(false);
+                            // Process tags
+                            const tagColumnsSet = new Set();
+                            Object.keys(metadata.tags || {}).forEach(colName => {
+                                if (metadata.tags[colName].length > 0) {
+                                    tagColumnsSet.add(colName);
+                                }
+                            });
+                            setTagColumns(tagColumnsSet);
+
+                            // Process ratings
+                            const ratingsMap = new Map();
+                            Object.keys(metadata.ratings || {}).forEach(colName => {
+                                const colType = cols.find(c => c.name === colName)?.type?.toLowerCase();
+                                if (["int", "bigint", "smallint", "mediumint", "tinyint"].includes(colType)) {
+                                    ratingsMap.set(colName, {
+                                        shape: metadata.ratings[colName].shape,
+                                        max_value: metadata.ratings[colName].maxValue
+                                    });
+                                }
+                            });
+                            setRatingColumns(ratingsMap);
+                        }
+                    } catch (e) {
+                        console.error('Failed to load column metadata:', e);
+                        setTagColumns(new Set());
+                        setRatingColumns(new Map());
+                    } finally {
+                        setLoadingTagColumns(false);
+                        setLoadingRatingColumns(false);
+                    }
 
                 } catch (e) {
                     usedDisplayCols = availableNames.slice();

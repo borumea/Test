@@ -27,7 +27,8 @@ const pool = mysql.createPool({
 const cache = {
     tables: null,
     columns: {},
-    columnsMeta: {}
+    columnsMeta: {},
+    tagsAndRatings: {} // Cache for tag/rating metadata by table
 };
 
 /**
@@ -142,12 +143,64 @@ async function loadColumns(table) {
 }
 
 /**
+ * Load tags and ratings metadata for a table
+ */
+async function loadTagsAndRatings(table) {
+    if (cache.tagsAndRatings[table]) {
+        return cache.tagsAndRatings[table];
+    }
+
+    // Fetch all tags for this table
+    const [tagRows] = await pool.query(
+        `SELECT column_name, tag_value
+         FROM Tags
+         WHERE table_name = ?
+         ORDER BY column_name, tag_value`,
+        [table]
+    );
+
+    // Fetch all ratings for this table
+    const [ratingRows] = await pool.query(
+        `SELECT column_name, shape, max_value
+         FROM Ratings
+         WHERE table_name = ?`,
+        [table]
+    );
+
+    // Build result object
+    const metadata = {
+        tags: {},
+        ratings: {}
+    };
+
+    // Group tags by column
+    tagRows.forEach(row => {
+        if (!metadata.tags[row.column_name]) {
+            metadata.tags[row.column_name] = [];
+        }
+        metadata.tags[row.column_name].push(row.tag_value);
+    });
+
+    // Group ratings by column
+    ratingRows.forEach(row => {
+        metadata.ratings[row.column_name] = {
+            shape: row.shape,
+            maxValue: row.max_value
+        };
+    });
+
+    cache.tagsAndRatings[table] = metadata;
+    return metadata;
+}
+
+/**
  * Clear all caches (useful after schema changes)
  */
 function clearCache() {
     cache.tables = null;
     cache.columns = {};
     cache.columnsMeta = {};
+    cache.tagsAndRatings = {};
 }
 
 module.exports = {
@@ -160,5 +213,6 @@ module.exports = {
     loadBaseTables,
     loadColumns,
     loadColumnsMeta,
+    loadTagsAndRatings,
     clearCache,
 };

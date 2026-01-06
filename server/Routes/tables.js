@@ -123,6 +123,42 @@ router.get('/primaryKey', authenticateToken, validateTableQuery, async (req, res
 });
 
 /**
+ * GET /api/column-metadata?table=xxx
+ * Get tags and ratings metadata for all columns in a table (batch endpoint)
+ * Cached for performance - reduces N queries per column to 1 query per table
+ */
+router.get('/column-metadata', authenticateToken, async (req, res) => {
+    try {
+        const { table } = req.query;
+
+        if (!table) {
+            return res.status(400).json({ error: 'Missing ?table parameter' });
+        }
+
+        if (!await entityExists(table)) {
+            return res.status(400).json({ error: `Unknown table: ${table}` });
+        }
+
+        // Check permissions
+        const permissions = req.user?.permissions || {};
+        const hasAccess = await hasAccessToEntity(table, permissions);
+
+        if (!hasAccess) {
+            return res.status(403).json({ error: `Access denied to table: ${table}` });
+        }
+
+        // Use cached function from dbService
+        const metadata = await dbService.loadTagsAndRatings(table);
+
+        return res.json(metadata);
+
+    } catch (err) {
+        console.error('Column metadata fetch error:', err);
+        res.status(500).json({ error: err.message || 'Failed to fetch column metadata' });
+    }
+});
+
+/**
  * GET /api/record?table=xxx&key=columnName&value=someValue
  * Fetch a single record by a specific column
  */
