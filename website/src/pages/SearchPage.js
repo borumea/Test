@@ -350,17 +350,24 @@ export default function SearchPage() {
 
     useEffect(() => {
         // Use totalCount for page validation when available
+        // Only validate page bounds, don't restrict navigation based on loaded data
         const effectiveTotal = totalCount > 0 ? totalCount : results.length;
+
+        if (effectiveTotal === 0) {
+            setPage(1);
+            return;
+        }
+
         const effectiveRowsPerPage = rowsPerPage === 0 ? effectiveTotal || 1 : Math.max(1, rowsPerPage);
         const maxPages = Math.max(1, Math.ceil(effectiveTotal / effectiveRowsPerPage));
 
         setPage((p) => {
-            if (effectiveTotal === 0) return 1;
             if (p < 1) return 1;
+            // Allow navigation to any page up to maxPages, even if data isn't loaded yet
             if (p > maxPages) return maxPages;
             return p;
         });
-    }, [results, rowsPerPage, totalCount]);
+    }, [rowsPerPage, totalCount]);
 
     useEffect(() => {
         if (!showAdvanced && table) {
@@ -534,8 +541,24 @@ export default function SearchPage() {
             let total = 0;
             if (countJson.rows && countJson.rows.length > 0) {
                 const firstRow = countJson.rows[0];
-                // Try different possible column names
-                total = firstRow.total || firstRow['COUNT(*)'] || firstRow.count || 0;
+                // Try different possible column names (case-insensitive)
+                const keys = Object.keys(firstRow);
+                for (const key of keys) {
+                    const lowerKey = key.toLowerCase();
+                    if (lowerKey === 'total' || lowerKey === 'count(*)' || lowerKey === 'count') {
+                        total = parseInt(firstRow[key]) || 0;
+                        break;
+                    }
+                }
+                // Fallback: use the first numeric value if available
+                if (total === 0 && keys.length > 0) {
+                    const firstValue = firstRow[keys[0]];
+                    if (typeof firstValue === 'number') {
+                        total = firstValue;
+                    } else if (typeof firstValue === 'string' && !isNaN(firstValue)) {
+                        total = parseInt(firstValue) || 0;
+                    }
+                }
             }
 
             console.log('COUNT query response:', countJson);
@@ -874,10 +897,11 @@ export default function SearchPage() {
 
     // Always use totalCount for pagination (not results.length)
     // This allows showing correct total pages even with windowed data
-    const effectiveTotal = totalCount > 0 ? totalCount : 0;
-    const totalPages = effectiveTotal > 0
-        ? Math.ceil(effectiveTotal / (rowsPerPage === 0 ? 1 : Math.max(1, rowsPerPage)))
-        : (results.length > 0 ? Math.ceil(results.length / Math.max(1, rowsPerPage)) : 1);
+    const totalPages = rowsPerPage === 0
+        ? Math.max(1, Math.ceil(results.length / (results.length || 1)))
+        : (totalCount > 0
+            ? Math.ceil(totalCount / Math.max(1, rowsPerPage))
+            : Math.max(1, Math.ceil(results.length / Math.max(1, rowsPerPage))));
 
     const startIndex = rowsPerPage === 0 ? 0 : (page - 1) * rowsPerPage;
 
