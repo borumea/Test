@@ -14,14 +14,36 @@ const COLORS = ["#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F", "#EDC948"
 function normalizeRowsToChart(rows = [], widget = {}) {
     if (!Array.isArray(rows)) return [];
     if (rows.length === 0) return [];
+
     const sample = rows[0];
-    if (sample.name && sample.value !== undefined) {
-        return rows.map((r) => ({ name: r.name, value: Number(r.value ?? r.count ?? r.total ?? 0) }));
+    if (!sample || typeof sample !== 'object') return [];
+
+    // If already in correct format, just ensure numbers are parsed
+    if (sample.name !== undefined && sample.value !== undefined) {
+        return rows.map((r) => ({
+            name: String(r.name ?? ''),
+            value: Number(r.value ?? r.count ?? r.total ?? 0)
+        }));
     }
+
     const keys = Object.keys(sample);
-    const nameKey = keys.find((k) => /^(name|group|label|category|type)$/i.test(k)) || keys[0];
-    const valueKey = keys.find((k) => /^(value|count|total|amount|sum)$/i.test(k)) || keys[1] || keys[0];
-    return rows.map((r) => ({ name: String(r[nameKey] ?? ""), value: Number(r[valueKey] ?? r.count ?? r.value ?? 0) }));
+    if (keys.length === 0) return [];
+
+    // Try to intelligently find name/label column
+    const nameKey = keys.find((k) => /^(name|group|label|category|type|item)$/i.test(k)) || keys[0];
+
+    // Try to intelligently find value/numeric column
+    const valueKey = keys.find((k) => /^(value|count|total|amount|sum|quantity)$/i.test(k)) || keys[1] || keys[0];
+
+    return rows.map((r) => {
+        const nameValue = r[nameKey];
+        const rawValue = r[valueKey] ?? r.count ?? r.value ?? r.total ?? 0;
+
+        return {
+            name: nameValue !== null && nameValue !== undefined ? String(nameValue) : '(empty)',
+            value: Number(rawValue) || 0
+        };
+    });
 }
 
 function CustomTooltip({ active, payload, label, total }) {
@@ -81,14 +103,13 @@ function DashboardCard({ instance = {}, dashboard = {}, onRemove, onChangeParams
 
     // Build payload for /api/query based on dashboard and params
     const buildQueryPayload = useCallback(() => {
-        const payload = {
-            table: dashboard.table,
-            columns: dashboard.columns || [],
-            groupBy: dashboard.groupBy || dashboard.xAxis,
-            aggregate: dashboard.aggregate || null,
-            filters: [],
-            limit: dashboard.params && dashboard.params.limit ? (localParams.limit || dashboard.params.limit.default) : undefined
-        };
+        // Validate dashboard has required table field
+        if (!dashboard || !dashboard.table) {
+            throw new Error('Dashboard configuration missing required "table" field');
+        }
+
+        // Start with filters from dashboard config (if any)
+        const filters = Array.isArray(dashboard.filters) ? [...dashboard.filters] : [];
 
         // apply dateRange param if defined (convert to filters)
         if (localParams && localParams.dateRange) {
@@ -97,17 +118,59 @@ function DashboardCard({ instance = {}, dashboard = {}, onRemove, onChangeParams
                 const n = Number(d.n);
                 const from = new Date();
                 from.setDate(from.getDate() - n);
-                payload.filters.push({ column: "created_at", operator: ">=", value: from.toISOString() });
+                filters.push({ column: "created_at", operator: ">=", value: from.toISOString() });
             } else if (d.from || d.to) {
-                if (d.from) payload.filters.push({ column: "created_at", operator: ">=", value: d.from });
-                if (d.to) payload.filters.push({ column: "created_at", operator: "<=", value: d.to });
+                if (d.from) filters.push({ column: "created_at", operator: ">=", value: d.from });
+                if (d.to) filters.push({ column: "created_at", operator: "<=", value: d.to });
             }
         }
 
         // minAmount param example
         if (localParams && localParams.minAmount != null && dashboard.params && dashboard.params.minAmount) {
-            payload.filters.push({ column: "amount", operator: ">=", value: localParams.minAmount });
+            filters.push({ column: "amount", operator: ">=", value: localParams.minAmount });
         }
+
+        // Additional param handling for other common filter scenarios
+        if (localParams) {
+            for (const [paramKey, paramMeta] of Object.entries(dashboard.params || {})) {
+                // Skip already handled params
+                if (paramKey === 'dateRange' || paramKey === 'minAmount' || paramKey === 'limit') continue;
+
+                const paramValue = localParams[paramKey];
+                if (paramValue !== undefined && paramValue !== null && paramValue !== '') {
+                    // For numeric params, add as filter if metadata specifies a column
+                    if (paramMeta.filterColumn) {
+                        const operator = paramMeta.filterOperator || '>=';
+                        filters.push({
+                            column: paramMeta.filterColumn,
+                            operator: operator,
+                            value: paramValue
+                        });
+                    }
+                }
+            }
+        }
+
+        // Determine limit: use dashboard.limit directly, or from params, or undefined
+        let limitValue = undefined;
+        if (dashboard.limit !== undefined && dashboard.limit !== null) {
+            limitValue = dashboard.limit;
+        } else if (dashboard.params && dashboard.params.limit) {
+            limitValue = localParams.limit !== undefined ? localParams.limit : dashboard.params.limit.default;
+        }
+
+        // Determine orderBy if specified in dashboard config
+        const orderBy = dashboard.orderBy || undefined;
+
+        const payload = {
+            table: dashboard.table,
+            columns: dashboard.columns || [],
+            groupBy: dashboard.groupBy || dashboard.xAxis,
+            aggregate: dashboard.aggregate || null,
+            filters: filters.length > 0 ? filters : undefined,
+            orderBy: orderBy,
+            limit: limitValue
+        };
 
         return payload;
     }, [dashboard, localParams]);

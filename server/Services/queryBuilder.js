@@ -157,6 +157,11 @@ class QueryBuilder {
      * Build final SQL query and parameters
      */
     build() {
+        // Validate table name
+        if (!this.table || typeof this.table !== 'string' || this.table.trim() === '') {
+            throw new Error('Table name is required');
+        }
+
         let sql = '';
         const params = [...this.whereParams];
 
@@ -165,19 +170,25 @@ class QueryBuilder {
             // Grouped aggregate
             sql = `SELECT \`${this.groupByColumn}\` AS \`group\`, ${this.aggregateFunc}(${this.aggregateColumn}) AS \`value\``;
             sql += ` FROM \`${this.table}\``;
-            
+
             if (this.whereClauses.length > 0) {
                 sql += ` WHERE ${this.whereClauses.join(' AND ')}`;
             }
-            
+
             sql += ` GROUP BY \`${this.groupByColumn}\``;
-            sql += ` ORDER BY \`value\` DESC`;
+
+            // Use custom orderBy if provided, otherwise default to ORDER BY value DESC
+            if (this.orderByClauses.length > 0) {
+                sql += ` ORDER BY ${this.orderByClauses.join(', ')}`;
+            } else {
+                sql += ` ORDER BY \`value\` DESC`;
+            }
 
         } else if (this.aggregateFunc && !this.groupByColumn) {
             // Single aggregate
             sql = `SELECT ${this.aggregateFunc}(${this.aggregateColumn}) AS \`value\``;
             sql += ` FROM \`${this.table}\``;
-            
+
             if (this.whereClauses.length > 0) {
                 sql += ` WHERE ${this.whereClauses.join(' AND ')}`;
             }
@@ -186,23 +197,29 @@ class QueryBuilder {
             // Group without explicit aggregate (count)
             sql = `SELECT \`${this.groupByColumn}\` AS \`group\`, COUNT(*) AS \`value\``;
             sql += ` FROM \`${this.table}\``;
-            
+
             if (this.whereClauses.length > 0) {
                 sql += ` WHERE ${this.whereClauses.join(' AND ')}`;
             }
-            
+
             sql += ` GROUP BY \`${this.groupByColumn}\``;
-            sql += ` ORDER BY \`value\` DESC`;
+
+            // Use custom orderBy if provided, otherwise default to ORDER BY value DESC
+            if (this.orderByClauses.length > 0) {
+                sql += ` ORDER BY ${this.orderByClauses.join(', ')}`;
+            } else {
+                sql += ` ORDER BY \`value\` DESC`;
+            }
 
         } else {
             // Regular SELECT
             const cols = this.selectColumns.length > 0 ? this.selectColumns.join(', ') : '*';
             sql = `SELECT ${cols} FROM \`${this.table}\``;
-            
+
             if (this.whereClauses.length > 0) {
                 sql += ` WHERE ${this.whereClauses.join(' AND ')}`;
             }
-            
+
             if (this.orderByClauses.length > 0) {
                 sql += ` ORDER BY ${this.orderByClauses.join(', ')}`;
             }
