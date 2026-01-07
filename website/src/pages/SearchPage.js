@@ -540,29 +540,9 @@ export default function SearchPage() {
             // Try to extract count from different possible formats
             let total = 0;
             if (countJson.rows && countJson.rows.length > 0) {
-                const firstRow = countJson.rows[0];
-                // Try different possible column names (case-insensitive)
-                const keys = Object.keys(firstRow);
-                for (const key of keys) {
-                    const lowerKey = key.toLowerCase();
-                    if (lowerKey === 'total' || lowerKey === 'count(*)' || lowerKey === 'count') {
-                        total = parseInt(firstRow[key]) || 0;
-                        break;
-                    }
-                }
-                // Fallback: use the first numeric value if available
-                if (total === 0 && keys.length > 0) {
-                    const firstValue = firstRow[keys[0]];
-                    if (typeof firstValue === 'number') {
-                        total = firstValue;
-                    } else if (typeof firstValue === 'string' && !isNaN(firstValue)) {
-                        total = parseInt(firstValue) || 0;
-                    }
-                }
+                total = countJson.rows.length
             }
 
-            console.log('COUNT query response:', countJson);
-            console.log('Extracted total count:', total);
             setTotalCount(total);
 
             // Process data result
@@ -897,8 +877,7 @@ export default function SearchPage() {
 
     // Always use totalCount for pagination (not results.length)
     // This allows showing correct total pages even with windowed data
-    const totalPages = rowsPerPage === 0
-        ? Math.max(1, Math.ceil(results.length / (results.length || 1)))
+    const totalPages = rowsPerPage === 0 ? 1
         : (totalCount > 0
             ? Math.ceil(totalCount / Math.max(1, rowsPerPage))
             : Math.max(1, Math.ceil(results.length / Math.max(1, rowsPerPage))));
