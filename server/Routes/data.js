@@ -25,17 +25,6 @@ router.post('/query', authenticateToken, requireTablePermission('table'), async 
     try {
         const { table, columns, filters, orderBy, groupBy, aggregate, limit, offset, includePrimaryKeys } = req.body || {};
 
-        console.log('[API /query] Request received:', {
-            table,
-            columns,
-            filters,
-            orderBy,
-            groupBy,
-            aggregate,
-            limit,
-            offset
-        });
-
         // Get metadata
         const metadata = await getEntityMetadata(table);
         const allowedCols = metadata.columns.map(c => c.name);
@@ -73,12 +62,7 @@ router.post('/query', authenticateToken, requireTablePermission('table'), async 
 
         // Execute query
         builtQuery = builder.build();
-        console.log('[API /query] Built SQL:', builtQuery.sql);
-        console.log('[API /query] SQL params:', builtQuery.params);
-
         const [rows, fields] = await pool.query(builtQuery.sql, builtQuery.params);
-
-        console.log(`[API /query] Query returned ${rows.length} rows`);
 
         // Extract column names
         const resultColumns = fields
@@ -152,24 +136,8 @@ router.post('/query', authenticateToken, requireTablePermission('table'), async 
         return res.json(response);
 
     } catch (e) {
-        console.error('[API /query] ERROR:', {
-            message: e.message,
-            stack: e.stack,
-            requestBody: req.body,
-            builtSQL: builtQuery?.sql,
-            sqlParams: builtQuery?.params
-        });
-
-        // Return detailed error message
-        const errorMessage = e.message || 'Query failed';
-        const errorDetails = {
-            error: errorMessage,
-            table: req.body?.table,
-            sql: builtQuery?.sql,
-            sqlError: e.sqlMessage || e.code || undefined
-        };
-
-        res.status(500).json(errorDetails);
+        console.error('Query error:', e.message);
+        res.status(500).json({ error: e.message || 'Query failed' });
     }
 });
 

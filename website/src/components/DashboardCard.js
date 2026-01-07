@@ -186,63 +186,22 @@ function DashboardCard({ instance = {}, dashboard = {}, onRemove, onChangeParams
         try {
             const payload = buildQueryPayload();
             Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
-
-            console.log(`[Dashboard: ${dashboard.title}] Request payload:`, payload);
-
             const res = await apiRequest("query", {
                 method: "POST",
                 body: payload,
                 signal
             });
             const json = await res.json();
-
             if (!res.ok) {
-                // Enhanced error logging with SQL details if available
-                const errorMsg = json.error || "Failed to load widget data";
-                console.error(`[Dashboard: ${dashboard.title}] API Error:`, {
-                    error: errorMsg,
-                    table: json.table,
-                    sql: json.sql,
-                    sqlError: json.sqlError,
-                    payload: payload
-                });
-
-                // Create user-friendly error message
-                let displayError = errorMsg;
-                if (json.sql) {
-                    displayError += `\n\nSQL: ${json.sql}`;
-                }
-                if (json.sqlError) {
-                    displayError += `\n\nDatabase Error: ${json.sqlError}`;
-                }
-
-                throw new Error(displayError);
+                throw new Error(json.error || "Failed to load widget data");
             }
-
             let rows = [];
             if (Array.isArray(json)) rows = json;
             else rows = json.rows || json.data || json.result || [];
-
-            console.log(`[Dashboard: ${dashboard.title}] Received ${rows.length} rows`);
-            console.log(`[Dashboard: ${dashboard.title}] Row data:`, rows);
-            console.log(`[Dashboard: ${dashboard.title}] Chart type: ${dashboard.chartType || 'unknown'}`);
             setData(rows);
         } catch (e) {
             if (e.name === "AbortError") return;
-
-            console.error(`[Dashboard: ${dashboard.title}] Fetch error:`, {
-                message: e.message,
-                stack: e.stack,
-                dashboard: {
-                    id: dashboard.id,
-                    title: dashboard.title,
-                    table: dashboard.table,
-                    aggregate: dashboard.aggregate,
-                    groupBy: dashboard.groupBy,
-                    filters: dashboard.filters
-                }
-            });
-
+            console.error("widget fetch error", e);
             setLastError(e.message || "Failed to load data");
             setData([]);
             onError && onError(e.message || "Widget load failed");
@@ -294,32 +253,18 @@ function DashboardCard({ instance = {}, dashboard = {}, onRemove, onChangeParams
     };
 
     function renderMetric() {
-        console.log(`[Dashboard: ${dashboard.title}] renderMetric called, data:`, data);
-        if (!data || data.length === 0) {
-            console.log(`[Dashboard: ${dashboard.title}] renderMetric: No data, showing "-"`);
-            return (
-                <div className="card-metric-only">
-                    <div className="metric-large" style={{ fontSize: `${fontSize.metric}px` }}>-</div>
-                </div>
-            );
-        }
+        if (!data || data.length === 0) return (
+            <div className="card-metric-only">
+                <div className="metric-large" style={{ fontSize: `${fontSize.metric}px` }}>-</div>
+            </div>
+        );
         const first = data[0];
-        console.log(`[Dashboard: ${dashboard.title}] renderMetric: first row:`, first);
         let raw = null;
         if (typeof first === "object") {
             raw = first.value ?? first.count ?? first.total ?? Object.values(first)[0];
-            console.log(`[Dashboard: ${dashboard.title}] renderMetric: extracted value:`, {
-                'first.value': first.value,
-                'first.count': first.count,
-                'first.total': first.total,
-                'Object.values(first)[0]': Object.values(first)[0],
-                'final raw': raw
-            });
         } else {
             raw = first;
-            console.log(`[Dashboard: ${dashboard.title}] renderMetric: non-object value:`, raw);
         }
-        console.log(`[Dashboard: ${dashboard.title}] renderMetric: formatting value:`, raw);
         return (
             <div className="card-metric-only">
                 <div className="metric-large" style={{ fontSize: `${fontSize.metric}px` }}>
@@ -420,11 +365,7 @@ function DashboardCard({ instance = {}, dashboard = {}, onRemove, onChangeParams
 
                 {/* Loading / Error */}
                 {loading && <div className="note" style={{ fontSize: `${fontSize.label}px` }}>Loading...</div>}
-                {lastError && (
-                    <div className="error-note" style={{ fontSize: `${fontSize.label}px`, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
-                        {lastError}
-                    </div>
-                )}
+                {lastError && <div className="error-note" style={{ fontSize: `${fontSize.label}px` }}>{lastError}</div>}
 
                 {/* Content */}
                 {chartType === "table" && (
