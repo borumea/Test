@@ -56,9 +56,27 @@ router.post('/query', authenticateToken, requireTablePermission('table'), async 
             builder.aggregate(aggregate, allowedCols);
         }
 
-        // Add limits
-        if (limit !== undefined && limit !== null) builder.limit(limit);
-        if (offset !== undefined && offset !== null) builder.offset(offset);
+        // Add limits with safety cap to prevent unlimited queries
+        const MAX_QUERY_LIMIT = 10000; // Maximum rows per query for safety
+        const DEFAULT_LIMIT = 1000; // Default limit when none specified
+
+        // Check if this is a COUNT/aggregate query (doesn't need limit for row protection)
+        const isAggregateQuery = aggregate || (columns && columns.some(col =>
+            typeof col === 'string' && col.toLowerCase().includes('count(')
+        ));
+
+        if (limit !== undefined && limit !== null) {
+            // Cap at maximum to prevent database overload
+            const safeLimitValue = Math.min(parseInt(limit), MAX_QUERY_LIMIT);
+            builder.limit(safeLimitValue);
+        } else if (!isAggregateQuery) {
+            // Apply default limit only for non-aggregate queries to prevent unlimited row fetching
+            builder.limit(DEFAULT_LIMIT);
+        }
+
+        if (offset !== undefined && offset !== null) {
+            builder.offset(offset);
+        }
 
         // Execute query
         builtQuery = builder.build();

@@ -483,27 +483,69 @@ export default function SearchPage() {
             finalOrderBy = finalOrderBy.slice(0, 3);
 
             // Step 1 & 2: Run COUNT and data query IN PARALLEL for better performance
+            // IMPORTANT: Never fetch unlimited data - always use LIMIT even in "show all" mode
+            const MAX_SHOW_ALL_ROWS = 1000; // Maximum rows to fetch in "show all" mode
+
             if (rowsPerPage === 0) {
-                // Show all mode - fetch everything
-                const allPayload = {
+                // "Show all" mode with reasonable limit to prevent database overload
+                const countPayload = {
+                    table,
+                    columns: ['COUNT(*) as total'],
+                    filters: effectiveFilters,
+                };
+
+                const limitedPayload = {
                     table,
                     columns: columns,
                     filters: effectiveFilters,
-                    orderBy: finalOrderBy
+                    orderBy: finalOrderBy,
+                    limit: MAX_SHOW_ALL_ROWS,
+                    includePrimaryKeys: true
                 };
 
-                const allRes = await apiRequest('query', {
-                    method: 'POST',
-                    body: allPayload
-                });
+                // Run both queries in parallel
+                const [countRes, dataRes] = await Promise.all([
+                    apiRequest('query', { method: 'POST', body: countPayload }),
+                    apiRequest('query', { method: 'POST', body: limitedPayload })
+                ]);
 
-                const allJson = await allRes.json();
-                if (!allRes.ok) throw new Error(allJson.error || "Search failed");
+                // Process count result
+                const countJson = await countRes.json();
+                if (!countRes.ok) throw new Error(countJson.error || "Failed to get count");
 
-                let rows = allJson.rows || [];
+                let total = 0;
+                if (countJson.rows && countJson.rows.length > 0) {
+                    const firstRow = countJson.rows[0];
+                    const keys = Object.keys(firstRow);
+                    for (const key of keys) {
+                        const lowerKey = key.toLowerCase();
+                        if (lowerKey === 'total' || lowerKey === 'count(*)' || lowerKey === 'count') {
+                            total = parseInt(firstRow[key]) || 0;
+                            break;
+                        }
+                    }
+                    if (total === 0 && keys.length > 0) {
+                        const firstValue = firstRow[keys[0]];
+                        if (typeof firstValue === 'number') {
+                            total = firstValue;
+                        } else if (typeof firstValue === 'string' && !isNaN(firstValue)) {
+                            total = parseInt(firstValue) || 0;
+                        }
+                    }
+                }
+
+                const dataJson = await dataRes.json();
+                if (!dataRes.ok) throw new Error(dataJson.error || "Search failed");
+
+                let rows = dataJson.rows || [];
                 setResults(rows);
                 setChunkedResults(rows);
-                setTotalCount(rows.length);
+                setTotalCount(total);
+
+                // Warn user if results were capped
+                if (total > MAX_SHOW_ALL_ROWS) {
+                    setError(`Showing first ${MAX_SHOW_ALL_ROWS} of ${total} total results. Use pagination to view all data.`);
+                }
                 return;
             }
 

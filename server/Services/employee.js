@@ -204,11 +204,14 @@ async function keepCurrentPassword(username) {
 
 /**
  * Get all employees with their permissions
+ * Limited to 1000 employees for performance
  */
 async function getAllEmployees() {
     const employeesTable = await detectEmployeesTable();
 
-    const [rows] = await pool.query(`SELECT * FROM \`${employeesTable}\``);
+    // Add LIMIT to prevent fetching unlimited rows
+    const MAX_EMPLOYEES = 1000;
+    const [rows] = await pool.query(`SELECT * FROM \`${employeesTable}\` LIMIT ?`, [MAX_EMPLOYEES]);
 
     return rows.map(row => {
         const employee = {};
@@ -234,7 +237,7 @@ async function getAllEmployees() {
  */
 async function verifyAdminAccess(creator, adminPassword, employeesTable) {
     const [creatorRow] = await pool.query(
-        `SELECT * FROM \`${employeesTable}\` WHERE username = ?`,
+        `SELECT * FROM \`${employeesTable}\` WHERE username = ? LIMIT 1`,
         [creator]
     );
 
@@ -298,7 +301,7 @@ async function createOrUpdateUser(creator, adminPassword, username, oneTimePassw
 
     // Check if user exists
     const [existing] = await pool.query(
-        `SELECT * FROM \`${employeesTable}\` WHERE username = ?`,
+        `SELECT * FROM \`${employeesTable}\` WHERE username = ? LIMIT 1`,
         [username]
     );
 
