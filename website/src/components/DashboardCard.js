@@ -186,22 +186,61 @@ function DashboardCard({ instance = {}, dashboard = {}, onRemove, onChangeParams
         try {
             const payload = buildQueryPayload();
             Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+
+            console.log(`[Dashboard: ${dashboard.title}] Request payload:`, payload);
+
             const res = await apiRequest("query", {
                 method: "POST",
                 body: payload,
                 signal
             });
             const json = await res.json();
+
             if (!res.ok) {
-                throw new Error(json.error || "Failed to load widget data");
+                // Enhanced error logging with SQL details if available
+                const errorMsg = json.error || "Failed to load widget data";
+                console.error(`[Dashboard: ${dashboard.title}] API Error:`, {
+                    error: errorMsg,
+                    table: json.table,
+                    sql: json.sql,
+                    sqlError: json.sqlError,
+                    payload: payload
+                });
+
+                // Create user-friendly error message
+                let displayError = errorMsg;
+                if (json.sql) {
+                    displayError += `\n\nSQL: ${json.sql}`;
+                }
+                if (json.sqlError) {
+                    displayError += `\n\nDatabase Error: ${json.sqlError}`;
+                }
+
+                throw new Error(displayError);
             }
+
             let rows = [];
             if (Array.isArray(json)) rows = json;
             else rows = json.rows || json.data || json.result || [];
+
+            console.log(`[Dashboard: ${dashboard.title}] Received ${rows.length} rows`);
             setData(rows);
         } catch (e) {
             if (e.name === "AbortError") return;
-            console.error("widget fetch error", e);
+
+            console.error(`[Dashboard: ${dashboard.title}] Fetch error:`, {
+                message: e.message,
+                stack: e.stack,
+                dashboard: {
+                    id: dashboard.id,
+                    title: dashboard.title,
+                    table: dashboard.table,
+                    aggregate: dashboard.aggregate,
+                    groupBy: dashboard.groupBy,
+                    filters: dashboard.filters
+                }
+            });
+
             setLastError(e.message || "Failed to load data");
             setData([]);
             onError && onError(e.message || "Widget load failed");
@@ -365,7 +404,11 @@ function DashboardCard({ instance = {}, dashboard = {}, onRemove, onChangeParams
 
                 {/* Loading / Error */}
                 {loading && <div className="note" style={{ fontSize: `${fontSize.label}px` }}>Loading...</div>}
-                {lastError && <div className="error-note" style={{ fontSize: `${fontSize.label}px` }}>{lastError}</div>}
+                {lastError && (
+                    <div className="error-note" style={{ fontSize: `${fontSize.label}px`, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                        {lastError}
+                    </div>
+                )}
 
                 {/* Content */}
                 {chartType === "table" && (

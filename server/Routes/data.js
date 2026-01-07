@@ -21,8 +21,20 @@ const uploadMemory = multer ? multer({ storage: multer.memoryStorage() }) : null
  * Execute a query with filters, grouping, and aggregation
  */
 router.post('/query', authenticateToken, requireTablePermission('table'), async (req, res) => {
+    let builtQuery = null;
     try {
         const { table, columns, filters, orderBy, groupBy, aggregate, limit, offset, includePrimaryKeys } = req.body || {};
+
+        console.log('[API /query] Request received:', {
+            table,
+            columns,
+            filters,
+            orderBy,
+            groupBy,
+            aggregate,
+            limit,
+            offset
+        });
 
         // Get metadata
         const metadata = await getEntityMetadata(table);
@@ -60,8 +72,13 @@ router.post('/query', authenticateToken, requireTablePermission('table'), async 
         if (offset !== undefined && offset !== null) builder.offset(offset);
 
         // Execute query
-        const { sql, params } = builder.build();
-        const [rows, fields] = await pool.query(sql, params);
+        builtQuery = builder.build();
+        console.log('[API /query] Built SQL:', builtQuery.sql);
+        console.log('[API /query] SQL params:', builtQuery.params);
+
+        const [rows, fields] = await pool.query(builtQuery.sql, builtQuery.params);
+
+        console.log(`[API /query] Query returned ${rows.length} rows`);
 
         // Extract column names
         const resultColumns = fields
@@ -135,8 +152,24 @@ router.post('/query', authenticateToken, requireTablePermission('table'), async 
         return res.json(response);
 
     } catch (e) {
-        console.error('Query error:', e);
-        res.status(500).json({ error: e.message || 'Query failed' });
+        console.error('[API /query] ERROR:', {
+            message: e.message,
+            stack: e.stack,
+            requestBody: req.body,
+            builtSQL: builtQuery?.sql,
+            sqlParams: builtQuery?.params
+        });
+
+        // Return detailed error message
+        const errorMessage = e.message || 'Query failed';
+        const errorDetails = {
+            error: errorMessage,
+            table: req.body?.table,
+            sql: builtQuery?.sql,
+            sqlError: e.sqlMessage || e.code || undefined
+        };
+
+        res.status(500).json(errorDetails);
     }
 });
 
