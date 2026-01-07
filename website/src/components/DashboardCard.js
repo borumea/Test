@@ -224,6 +224,8 @@ function DashboardCard({ instance = {}, dashboard = {}, onRemove, onChangeParams
             else rows = json.rows || json.data || json.result || [];
 
             console.log(`[Dashboard: ${dashboard.title}] Received ${rows.length} rows`);
+            console.log(`[Dashboard: ${dashboard.title}] Row data:`, rows);
+            console.log(`[Dashboard: ${dashboard.title}] Chart type: ${dashboard.chartType || 'unknown'}`);
             setData(rows);
         } catch (e) {
             if (e.name === "AbortError") return;
@@ -292,18 +294,32 @@ function DashboardCard({ instance = {}, dashboard = {}, onRemove, onChangeParams
     };
 
     function renderMetric() {
-        if (!data || data.length === 0) return (
-            <div className="card-metric-only">
-                <div className="metric-large" style={{ fontSize: `${fontSize.metric}px` }}>-</div>
-            </div>
-        );
+        console.log(`[Dashboard: ${dashboard.title}] renderMetric called, data:`, data);
+        if (!data || data.length === 0) {
+            console.log(`[Dashboard: ${dashboard.title}] renderMetric: No data, showing "-"`);
+            return (
+                <div className="card-metric-only">
+                    <div className="metric-large" style={{ fontSize: `${fontSize.metric}px` }}>-</div>
+                </div>
+            );
+        }
         const first = data[0];
+        console.log(`[Dashboard: ${dashboard.title}] renderMetric: first row:`, first);
         let raw = null;
         if (typeof first === "object") {
             raw = first.value ?? first.count ?? first.total ?? Object.values(first)[0];
+            console.log(`[Dashboard: ${dashboard.title}] renderMetric: extracted value:`, {
+                'first.value': first.value,
+                'first.count': first.count,
+                'first.total': first.total,
+                'Object.values(first)[0]': Object.values(first)[0],
+                'final raw': raw
+            });
         } else {
             raw = first;
+            console.log(`[Dashboard: ${dashboard.title}] renderMetric: non-object value:`, raw);
         }
+        console.log(`[Dashboard: ${dashboard.title}] renderMetric: formatting value:`, raw);
         return (
             <div className="card-metric-only">
                 <div className="metric-large" style={{ fontSize: `${fontSize.metric}px` }}>
