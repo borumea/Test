@@ -526,7 +526,17 @@ export default function SearchPage() {
             // Process count result
             const countJson = await countRes.json();
             if (!countRes.ok) throw new Error(countJson.error || "Failed to get count");
-            const total = countJson.rows?.[0]?.total || 0;
+
+            // Try to extract count from different possible formats
+            let total = 0;
+            if (countJson.rows && countJson.rows.length > 0) {
+                const firstRow = countJson.rows[0];
+                // Try different possible column names
+                total = firstRow.total || firstRow['COUNT(*)'] || firstRow.count || 0;
+            }
+
+            console.log('COUNT query response:', countJson);
+            console.log('Extracted total count:', total);
             setTotalCount(total);
 
             // Process data result
@@ -847,9 +857,12 @@ export default function SearchPage() {
         return String(val);
     }
 
+    // Use totalCount if available, otherwise fall back to results.length
+    // This ensures pagination works even if COUNT query fails
+    const effectiveTotal = totalCount > 0 ? totalCount : results.length;
     const totalPages = Math.max(
         1,
-        Math.ceil(totalCount / (rowsPerPage === 0 ? (totalCount || 1) : Math.max(1, rowsPerPage)))
+        Math.ceil(effectiveTotal / (rowsPerPage === 0 ? (effectiveTotal || 1) : Math.max(1, rowsPerPage)))
     );
 
     const startIndex = rowsPerPage === 0 ? 0 : (page - 1) * rowsPerPage;
