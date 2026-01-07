@@ -4,7 +4,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { pool } = require('../Services/db');
+const { pool, clearTagsAndRatingsCache } = require('../Services/db');
 const { createQueryBuilder } = require('../Services/queryBuilder');
 const { getEntityMetadata } = require('../Services/metadata');
 const { insertRecord, updateRecord, deleteRecords, getRecordByKey } = require('../Services/crud');
@@ -174,6 +174,12 @@ router.post(
                 }
 
                 const result = await insertRecord(table, data, files);
+
+                // Clear tags/ratings cache if these tables were modified
+                if (table === 'Tags' || table === 'Ratings') {
+                    clearTagsAndRatingsCache();
+                }
+
                 return res.json(result);
 
             } else {
@@ -185,6 +191,12 @@ router.post(
                 }
 
                 const result = await insertRecord(table, data);
+
+                // Clear tags/ratings cache if these tables were modified
+                if (table === 'Tags' || table === 'Ratings') {
+                    clearTagsAndRatingsCache();
+                }
+
                 return res.json(result);
             }
 
@@ -231,6 +243,12 @@ router.post(
                 }
 
                 const result = await updateRecord(table, pkColumn, pkValue, data, files);
+
+                // Clear tags/ratings cache if these tables were modified
+                if (table === 'Tags' || table === 'Ratings') {
+                    clearTagsAndRatingsCache();
+                }
+
                 return res.json(result);
 
             } else {
@@ -248,6 +266,12 @@ router.post(
                 }
 
                 const result = await updateRecord(table, pkColumn, pkValue, data);
+
+                // Clear tags/ratings cache if these tables were modified
+                if (table === 'Tags' || table === 'Ratings') {
+                    clearTagsAndRatingsCache();
+                }
+
                 return res.json(result);
             }
 
@@ -298,6 +322,12 @@ router.post(
             }
 
             const result = await deleteRecords(table, pkColumn, values);
+
+            // Clear tags/ratings cache if these tables were modified
+            if (table === 'Tags' || table === 'Ratings') {
+                clearTagsAndRatingsCache();
+            }
+
             return res.json(result);
 
         } catch (e) {

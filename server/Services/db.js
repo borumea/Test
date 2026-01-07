@@ -203,6 +203,13 @@ function clearCache() {
     cache.tagsAndRatings = {};
 }
 
+/**
+ * Clear only the tags and ratings cache
+ */
+function clearTagsAndRatingsCache() {
+    cache.tagsAndRatings = {};
+}
+
 module.exports = {
     pool,
     DB_NAME,
@@ -215,4 +222,5 @@ module.exports = {
     loadColumnsMeta,
     loadTagsAndRatings,
     clearCache,
+    clearTagsAndRatingsCache,
 };

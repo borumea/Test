@@ -206,8 +206,9 @@ export default function RatingManager({
                         className="btn btn-centered"
                         style={{marginLeft: 'auto'}}
                         onClick={() => setShowManageModal(true)}
+                        title="Configure Rating"
                     >
-                        Manage Rating
+                        ⚙️
                     </button>
                 )}
             </div>

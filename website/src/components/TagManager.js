@@ -273,8 +273,9 @@ export default function TagManager({
                     type="button"
                     className="btn btn-centered"
                     onClick={() => setShowManageModal(true)}
+                    title="Configure Tags"
                 >
-                    Manage Tags
+                    ⚙️
                 </button>
             )}
 

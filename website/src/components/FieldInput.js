@@ -222,8 +222,9 @@ export function FieldInput({ meta, value, onChange, mode, table }) {
                             type="button"
                             className="btn btn-centered"
                             onClick={() => setShowTagManager(true)}
+                            title="Add Tags"
                         >
-                            Create Tags
+                            +
                         </button>
                     )}
                 </div>
@@ -246,8 +247,9 @@ export function FieldInput({ meta, value, onChange, mode, table }) {
                         type="button"
                         className="btn btn-centered"
                         onClick={() => setShowTagManager(true)}
+                        title="Add Tags"
                     >
-                        Create Tags
+                        +
                     </button>
                 )}
             </div>
@@ -358,8 +360,9 @@ export function FieldInput({ meta, value, onChange, mode, table }) {
                         type="button"
                         className="btn btn-centered"
                         onClick={() => setShowRatingManager(true)}
+                        title="Add Rating"
                     >
-                        Create Rating Display
+                        +
                     </button>
                 )}
             </div>
