@@ -224,7 +224,7 @@ function DashboardCard({ instance = {}, dashboard = {}, onRemove, onChangeParams
             controller.abort();
             clearInterval(id);
         };
-    }, [fetchData]);
+    }, [fetchData, REFRESH_MS]);
 
     // when instance.params change upstream, sync to local
     useEffect(() => {
@@ -280,7 +280,7 @@ function DashboardCard({ instance = {}, dashboard = {}, onRemove, onChangeParams
         const bodyHeight = bodyRef.current.clientHeight;
         const paramsHeight = dashboard.params ? 60 : 0;
         return Math.max(150, bodyHeight - paramsHeight - 40);
-    }, [dimensions, dashboard.params]);
+    }, [dashboard.params]);
 
     return (
         <div
