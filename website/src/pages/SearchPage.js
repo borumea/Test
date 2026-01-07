@@ -349,15 +349,18 @@ export default function SearchPage() {
     }, [table]);
 
     useEffect(() => {
-        const effectiveRowsPerPage = rowsPerPage === 0 ? results.length || 1 : Math.max(1, rowsPerPage);
-        const totalPages = Math.max(1, Math.ceil(results.length / effectiveRowsPerPage));
+        // Use totalCount for page validation when available
+        const effectiveTotal = totalCount > 0 ? totalCount : results.length;
+        const effectiveRowsPerPage = rowsPerPage === 0 ? effectiveTotal || 1 : Math.max(1, rowsPerPage);
+        const maxPages = Math.max(1, Math.ceil(effectiveTotal / effectiveRowsPerPage));
+
         setPage((p) => {
-            if (results.length === 0) return 1;
+            if (effectiveTotal === 0) return 1;
             if (p < 1) return 1;
-            if (p > totalPages) return totalPages;
+            if (p > maxPages) return maxPages;
             return p;
         });
-    }, [results, rowsPerPage]);
+    }, [results, rowsPerPage, totalCount]);
 
     useEffect(() => {
         if (!showAdvanced && table) {
@@ -574,7 +577,7 @@ export default function SearchPage() {
         }
     }
 
-    async function loadNextChunk() {
+    async function loadChunkForPage(targetPage) {
         if (loadingChunk || !table) return;
 
         setLoadingChunk(true);
@@ -605,8 +608,11 @@ export default function SearchPage() {
             }
             finalOrderBy = finalOrderBy.slice(0, 3);
 
-            const nextChunkIndex = currentChunkIndex + 1;
-            const offset = nextChunkIndex * chunkSize;
+            // Calculate which chunk (10-page window) contains the target page
+            // Pages 1-10 = chunk 0, pages 11-20 = chunk 1, etc.
+            const pagesPerChunk = 10;
+            const targetChunkIndex = Math.floor((targetPage - 1) / pagesPerChunk);
+            const offset = targetChunkIndex * chunkSize;
 
             const chunkPayload = {
                 table,
@@ -624,15 +630,17 @@ export default function SearchPage() {
             });
 
             const json = await res.json();
-            if (!res.ok) throw new Error(json.error || "Failed to load more data");
+            if (!res.ok) throw new Error(json.error || "Failed to load chunk");
 
             const newRows = json.rows || [];
-            setResults(prev => [...prev, ...newRows]);
-            setChunkedResults(prev => [...prev, ...newRows]);
-            setCurrentChunkIndex(nextChunkIndex);
+
+            // Replace results with the new chunk (don't append)
+            setResults(newRows);
+            setChunkedResults(newRows);
+            setCurrentChunkIndex(targetChunkIndex);
 
         } catch (err) {
-            setError(err.message || "Failed to load more data");
+            setError(err.message || "Failed to load chunk");
         } finally {
             setLoadingChunk(false);
         }
@@ -660,10 +668,17 @@ export default function SearchPage() {
     const visibleResults = useMemo(() => {
         if (!results.length) return [];
         if (rowsPerPage === 0) return results.slice();
-        const start = (page - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-        return results.slice(start, end);
-    }, [results, page, rowsPerPage]);
+
+        // Calculate the absolute position in the full dataset
+        const absoluteStart = (page - 1) * rowsPerPage;
+
+        // Calculate the position relative to the current chunk
+        const chunkStartIndex = currentChunkIndex * chunkSize;
+        const relativeStart = absoluteStart - chunkStartIndex;
+        const relativeEnd = relativeStart + rowsPerPage;
+
+        return results.slice(relativeStart, relativeEnd);
+    }, [results, page, rowsPerPage, currentChunkIndex, chunkSize]);
 
     function renderCell(val, colMeta, columnName, rowData) {
         if (val === null || val === undefined) return "";
@@ -857,31 +872,49 @@ export default function SearchPage() {
         return String(val);
     }
 
-    // Use totalCount if available, otherwise fall back to results.length
-    // This ensures pagination works even if COUNT query fails
-    const effectiveTotal = totalCount > 0 ? totalCount : results.length;
-    const totalPages = Math.max(
-        1,
-        Math.ceil(effectiveTotal / (rowsPerPage === 0 ? (effectiveTotal || 1) : Math.max(1, rowsPerPage)))
-    );
+    // Always use totalCount for pagination (not results.length)
+    // This allows showing correct total pages even with windowed data
+    const effectiveTotal = totalCount > 0 ? totalCount : 0;
+    const totalPages = effectiveTotal > 0
+        ? Math.ceil(effectiveTotal / (rowsPerPage === 0 ? 1 : Math.max(1, rowsPerPage)))
+        : (results.length > 0 ? Math.ceil(results.length / Math.max(1, rowsPerPage)) : 1);
 
     const startIndex = rowsPerPage === 0 ? 0 : (page - 1) * rowsPerPage;
 
-    // Check if we need to load more data
+    // Smart pagination: load the appropriate chunk when user navigates to a page outside current chunk
     useEffect(() => {
-        if (rowsPerPage === 0 || totalPages <= 10) return; // Don't chunk when showing all
+        if (rowsPerPage === 0 || !totalCount || totalCount === 0) return; // Don't chunk when showing all or no data
 
-        const endIndex = startIndex + rowsPerPage;
-        const needMoreData = endIndex > results.length && results.length < totalCount;
+        // Calculate which chunk the current page belongs to
+        const pagesPerChunk = 10;
+        const targetChunkIndex = Math.floor((page - 1) / pagesPerChunk);
 
-        if (needMoreData && !loadingChunk) {
-            loadNextChunk();
+        // If we're navigating to a different chunk, load it
+        if (targetChunkIndex !== currentChunkIndex && !loadingChunk) {
+            loadChunkForPage(page);
+        } else {
+            // Check if the page we're trying to view is outside loaded data
+            const pageStartIndex = (page - 1) * rowsPerPage;
+            const pageEndIndex = pageStartIndex + rowsPerPage;
+            const chunkStartIndex = currentChunkIndex * chunkSize;
+            const chunkEndIndex = chunkStartIndex + results.length;
+
+            // If page is outside current chunk bounds, load the appropriate chunk
+            if (pageStartIndex < chunkStartIndex || pageEndIndex > chunkEndIndex) {
+                if (!loadingChunk && results.length > 0) {
+                    loadChunkForPage(page);
+                }
+            }
         }
-    }, [page, rowsPerPage, results.length, totalCount]);
+    }, [page, rowsPerPage, currentChunkIndex, totalCount]);
     function onSelectRow(localIndex) {
-        const globalIndex = startIndex + localIndex;
-        setSelectedRow(results[globalIndex]);
-        setSelectedRowGlobalIndex(globalIndex);
+        // Calculate relative index within the current chunk
+        const chunkStartIndex = currentChunkIndex * chunkSize;
+        const relativeStart = ((page - 1) * rowsPerPage) - chunkStartIndex;
+        const relativeIndex = relativeStart + localIndex;
+
+        setSelectedRow(results[relativeIndex]);
+        setSelectedRowGlobalIndex((page - 1) * rowsPerPage + localIndex);
     }
 
     function onRightClickRow(e, localIndex) {
@@ -1226,8 +1259,13 @@ export default function SearchPage() {
                                 )}
 
                                 {visibleResults.map((row, localRi) => {
-                                    const globalIndex = startIndex + localRi;
-                                    const isSelected = selectedRowGlobalIndex === globalIndex;
+                                    const absoluteGlobalIndex = (page - 1) * rowsPerPage + localRi;
+                                    const isSelected = selectedRowGlobalIndex === absoluteGlobalIndex;
+
+                                    // Calculate relative index within the current chunk for data access
+                                    const chunkStartIndex = currentChunkIndex * chunkSize;
+                                    const relativeStart = ((page - 1) * rowsPerPage) - chunkStartIndex;
+                                    const globalIndex = relativeStart + localRi;
 
                                     return (
                                         <tr
