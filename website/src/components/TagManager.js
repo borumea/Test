@@ -275,7 +275,7 @@ export default function TagManager({
                     onClick={() => setShowManageModal(true)}
                     title="Configure Tags"
                 >
-                    ⚙️
+                    ⛭
                 </button>
             )}
 

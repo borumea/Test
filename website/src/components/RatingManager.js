@@ -208,7 +208,7 @@ export default function RatingManager({
                         onClick={() => setShowManageModal(true)}
                         title="Configure Rating"
                     >
-                        ⚙️
+                        ⛭
                     </button>
                 )}
             </div>
