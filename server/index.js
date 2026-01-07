@@ -56,7 +56,16 @@ app.use('/api/views', viewsRoutes);         // View management
 
 // --- 404 handler ---
 app.use((req, res) => {
-    logger.warn('404 endpoint not found', { method: req.method, path: req.path });
+    // Silently ignore webpack HMR requests (handled by webpack dev server)
+    const isWebpackHMR = req.path.includes('.hot-update.json') ||
+                         req.path.includes('.hot-update.js') ||
+                         req.path.includes('webpack-dev-server') ||
+                         req.path.includes('sockjs-node');
+
+    if (!isWebpackHMR) {
+        logger.warn('404 endpoint not found', { method: req.method, path: req.path });
+    }
+
     res.status(404).json({ error: 'Endpoint not found' });
 });
 

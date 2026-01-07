@@ -36,11 +36,20 @@ const currentLogLevel = process.env.LOG_LEVEL || 'INFO';
 const currentPriority = LOG_LEVELS[currentLogLevel]?.priority ?? LOG_LEVELS.INFO.priority;
 
 /**
- * Format timestamp
+ * Format timestamp in human-readable format with local timezone
  */
 function getTimestamp() {
     const now = new Date();
-    return now.toISOString();
+    return now.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZoneName: 'short'
+    });
 }
 
 /**

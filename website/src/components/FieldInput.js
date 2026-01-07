@@ -84,6 +84,9 @@ export function FieldInput({ meta, value, onChange, mode, table }) {
     const [checkingRating, setCheckingRating] = useState(true);
     const [showRatingManager, setShowRatingManager] = useState(false);
 
+    // State for choosing between tags and ratings (for alphanumeric VARCHAR fields)
+    const [showChoiceModal, setShowChoiceModal] = useState(false);
+
     // State for file inputs
     const [fileName, setFileName] = useState("");
 
@@ -105,6 +108,8 @@ export function FieldInput({ meta, value, onChange, mode, table }) {
             if (["varchar", "char", "text", "mediumtext", "longtext"].includes(type)) {
                 const tags = metadata.tags[name] || [];
                 setHasTags(tags.length > 0);
+                // Also check for ratings in VARCHAR fields (alphanumeric support)
+                setHasRating(!!metadata.ratings[name]);
             }
             setCheckingTags(false);
 
@@ -168,12 +173,57 @@ export function FieldInput({ meta, value, onChange, mode, table }) {
         setShowRatingManager(false);
     };
 
-    // TEXT TYPES (with potential tag support)
+    // Handler when user clicks + on alphanumeric VARCHAR field
+    const handleAddClick = () => {
+        // For VARCHAR fields, show choice modal if neither tags nor ratings exist
+        if (["varchar", "char"].includes(type) && !hasTags && !hasRating) {
+            setShowChoiceModal(true);
+        } else if (hasTags) {
+            // Already has tags, just open tag manager
+            setShowTagManager(true);
+        } else if (hasRating) {
+            // Already has ratings, just open rating manager
+            setShowRatingManager(true);
+        } else {
+            // Default behavior for non-alphanumeric fields
+            setShowTagManager(true);
+        }
+    };
+
+    // Handler when user chooses tags or ratings from choice modal
+    const handleChoice = (choice) => {
+        setShowChoiceModal(false);
+        if (choice === 'tags') {
+            setShowTagManager(true);
+        } else if (choice === 'ratings') {
+            setShowRatingManager(true);
+        }
+    };
+
+    // TEXT TYPES (with potential tag or rating support)
     if (["varchar", "char", "text", "mediumtext", "longtext"].includes(type)) {
-        if (checkingTags) {
+        if (checkingTags || checkingRating) {
             return <div className="field-input">Loading...</div>;
         }
 
+        // Show RatingManager if this VARCHAR field has ratings
+        if ((hasRating || showRatingManager) && ["varchar", "char"].includes(type)) {
+            return (
+                <RatingManager
+                    table={table}
+                    column={name}
+                    value={parseInt(value) || 0}
+                    onChange={(rating) => onChange(rating)}
+                    required={isRequired}
+                    readOnly={isReadonly}
+                    onRatingSaved={handleRatingSaved}
+                    onCancel={handleCancelRatingCreation}
+                    isCreatingRating={showRatingManager}
+                />
+            );
+        }
+
+        // Show TagManager if this field has tags
         if (hasTags || showTagManager) {
             let tagArray = [];
             try {
@@ -206,6 +256,13 @@ export function FieldInput({ meta, value, onChange, mode, table }) {
         }
 
         const canBeTagged = excludedTagsTables[table] ? excludedTagsTables[table].includes(name) === false : true;
+        const canBeRated = excludedRatingsTables[table] ? excludedRatingsTables[table].includes(name) === false : true;
+        const canHaveMetadata = canBeTagged || canBeRated;
+
+        // Determine button title based on field type
+        const isAlphanumeric = ["varchar", "char"].includes(type);
+        const buttonTitle = isAlphanumeric ? "Add Tags or Rating" : "Add Tags";
+
         if (["text", "mediumtext", "longtext"].includes(type)) {
             return (
                 <div className="field-with-tags-option">
@@ -242,15 +299,21 @@ export function FieldInput({ meta, value, onChange, mode, table }) {
                     required={isRequired}
                     readOnly={isReadonly}
                 />
-                {!isReadonly && canBeTagged && (
+                {!isReadonly && canHaveMetadata && (
                     <button
                         type="button"
                         className="btn btn-centered"
-                        onClick={() => setShowTagManager(true)}
-                        title="Add Tags"
+                        onClick={handleAddClick}
+                        title={buttonTitle}
                     >
                         +
                     </button>
+                )}
+                {showChoiceModal && (
+                    <ChoiceModal
+                        onChoice={handleChoice}
+                        onCancel={() => setShowChoiceModal(false)}
+                    />
                 )}
             </div>
         );
@@ -518,4 +581,42 @@ export function parseLocalDateTime(input) {
     // As a last resort, try Date.parse
     const fallback = new Date(input);
     return isNaN(fallback) ? null : fallback;
+}
+
+/**
+ * ChoiceModal Component
+ * Modal for choosing between tags or ratings for alphanumeric VARCHAR fields
+ */
+function ChoiceModal({ onChoice, onCancel }) {
+    return (
+        <div className="modal-overlay" onClick={onCancel}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <h3>Choose Display Type</h3>
+                <p>This field can accept both text and numbers. Would you like to add tags or ratings?</p>
+                <div className="modal-buttons">
+                    <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => onChoice('tags')}
+                    >
+                        Tags
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => onChoice('ratings')}
+                    >
+                        Ratings
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={onCancel}
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 }
